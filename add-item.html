@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Stock - Add Item</title>
+    
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <!-- PWA Support -->
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="images/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#667eea">
+<script src="/sw-register.js"></script>
+<script src="offline-sync.js"></script>
+    <!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+
+<!-- ===== ALL FIREBASE CODE IN ONE PLACE ===== -->
+<script>
+    // ============================================
+    // FIREBASE CONFIG
+    // ============================================
+    const firebaseConfig = {
+        apiKey: "AIzaSyAwcI_RRe3nRS8ZLxExsyyT4PDdtv5g4kg",
+        authDomain: "smart-stock-app-da50f.firebaseapp.com",
+        projectId: "smart-stock-app-da50f",
+        storageBucket: "smart-stock-app-da50f.appspot.com",
+        messagingSenderId: "512981075308",
+        appId: "1:512981075308:web:491c04288f19aa26775f49",
+        measurementId: "G-QPCK6Q566V"
+    };
+
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    console.log("🔥 Firebase connected!");
+
+    // ============================================
+    // PRODUCT FUNCTIONS
+    // ============================================
+
+    // Add Product
+    async function addProduct(productData) {
+        try {
+            const docRef = await db.collection('products').add({
+                ...productData,
+                dateAdded: new Date().toISOString()
+            });
+            console.log("✅ Product added:", docRef.id);
+            return docRef.id;
+        } catch (error) {
+            console.error("❌ Error adding product:", error);
+            return null;
+        }
+    }
+
+    // Get All Products
+    async function getProducts() {
+        try {
+            const snapshot = await db.collection('products').get();
+            const products = [];
+            snapshot.forEach(doc => {
+                products.push({ id: doc.id, ...doc.data() });
+            });
+            return products;
+        } catch (error) {
+            console.error("❌ Error getting products:", error);
+            return [];
+        }
+    }
+
+    // ============================================
+    // USER FUNCTIONS
+    // ============================================
+
+    // Get User by Email
+    async function getUserByEmail(email) {
+        try {
+            const snapshot = await db.collection('users')
+                .where('email', '==', email)
+                .get();
+            if (snapshot.empty) return null;
+            let user = null;
+            snapshot.forEach(doc => {
+                user = { id: doc.id, ...doc.data() };
+            });
+            return user;
+        } catch (error) {
+            console.error("❌ Error getting user:", error);
+            return null;
+        }
+    }
+
+    // Update User
+    async function updateUser(userId, data) {
+        try {
+            await db.collection('users').doc(userId).update(data);
+            console.log("✅ User updated:", userId);
+            return true;
+        } catch (error) {
+            console.error("❌ Error updating user:", error);
+            return false;
+        }
+    }
+
+    // Get All Users
+    async function getUsers() {
+        try {
+            const snapshot = await db.collection('users').get();
+            const users = [];
+            snapshot.forEach(doc => {
+                users.push({ id: doc.id, ...doc.data() });
+            });
+            return users;
+        } catch (error) {
+            console.error("❌ Error getting users:", error);
+            return [];
+        }
+    }
+
+    // Delete User
+    async function deleteUser(userId) {
+        try {
+            await db.collection('users').doc(userId).delete();
+            console.log("✅ User deleted:", userId);
+            return true;
+        } catch (error) {
+            console.error("❌ Error deleting user:", error);
+            return false;
+        }
+    }
+
+    // ============================================
+    // SUPPLIER FUNCTIONS
+    // ============================================
+
+    // Add Supplier
+    async function addSupplier(supplierData) {
+        try {
+            const docRef = await db.collection('suppliers').add(supplierData);
+            console.log("✅ Supplier added:", docRef.id);
+            return docRef.id;
+        } catch (error) {
+            console.error("❌ Error adding supplier:", error);
+            return null;
+        }
+    }
+
+    // Get All Suppliers
+    async function getSuppliers() {
+        try {
+            const snapshot = await db.collection('suppliers').get();
+            const suppliers = [];
+            snapshot.forEach(doc => {
+                suppliers.push({ id: doc.id, ...doc.data() });
+            });
+            return suppliers;
+        } catch (error) {
+            console.error("❌ Error getting suppliers:", error);
+            return [];
+        }
+    }
+
+    // ============================================
+    // EMAIL FUNCTIONS
+    // ============================================
+
+    // Log Email
+    async function logEmail(emailData) {
+        try {
+            const docRef = await db.collection('emailLogs').add({
+                ...emailData,
+                date: new Date().toISOString(),
+                status: 'Sent',
+                sentBy: 'System'
+            });
+            console.log("✅ Email logged:", docRef.id);
+            return docRef.id;
+        } catch (error) {
+            console.error("❌ Error logging email:", error);
+            return null;
+        }
+    }
+
+    // Get Email Logs
+    async function getEmailLogs() {
+        try {
+            const snapshot = await db.collection('emailLogs')
+                .orderBy('date', 'desc')
+                .get();
+            const logs = [];
+            snapshot.forEach(doc => {
+                logs.push({ id: doc.id, ...doc.data() });
+            });
+            return logs;
+        } catch (error) {
+            console.error("❌ Error getting email logs:", error);
+            return [];
+        }
+    }
+
+    // Get Email Settings
+    async function getEmailSettings() {
+        try {
+            const snapshot = await db.collection('emailSettings').doc('settings').get();
+            if (snapshot.exists) {
+                return snapshot.data();
+            }
+            return {
+                lowStockAlerts: true,
+                expiryAlerts: true,
+                passwordResetEmails: true,
+                newUserEmails: true,
+                supplierNotifications: true,
+                weeklyReports: false,
+                monthlyReports: false
+            };
+        } catch (error) {
+            console.error("❌ Error getting email settings:", error);
+            return {};
+        }
+    }
+
+    // Save Email Settings
+    async function saveEmailSettings(settings) {
+        try {
+            await db.collection('emailSettings').doc('settings').set(settings);
+            console.log("✅ Email settings saved!");
+            return true;
+        } catch (error) {
+            console.error("❌ Error saving email settings:", error);
+            return false;
+        }
+    }
+
+    // Send Welcome Email
+    async function sendWelcomeEmail(userEmail, userName) {
+        const emailData = {
+            type: 'Welcome Email',
+            recipient: userEmail,
+            subject: 'Welcome to SmartStock!',
+            message: `Hello ${userName},\n\nWelcome to SmartStock! Your account has been created successfully.\n\nPlease login to start managing your inventory.\n\nThank you,\nSmartStock Team`
+        };
+        await logEmail(emailData);
+        console.log(`📧 Welcome email sent to ${userEmail}`);
+        return true;
+    }
+
+    console.log("✅ All Firebase functions loaded!");
+</script>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    
+    <script>
+        // ============================================
+        // FIREBASE CONFIG - DIRECT IN HTML
+        // ============================================
+        const firebaseConfig = {
+            apiKey: "AIzaSyAwcI_RRe3nRS8ZLxExsyyT4PDdtv5g4kg",
+            authDomain: "smart-stock-app-da50f.firebaseapp.com",
+            projectId: "smart-stock-app-da50f",
+            storageBucket: "smart-stock-app-da50f.appspot.com",
+            messagingSenderId: "512981075308",
+            appId: "1:512981075308:web:491c04288f19aa26775f49",
+            measurementId: "G-QPCK6Q566V"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        console.log("🔥 Firebase connected!");
+
+        // ============================================
+        // ADD PRODUCT FUNCTION
+        // ============================================
+        async function addProduct(productData) {
+            try {
+                const docRef = await db.collection('products').add({
+                    ...productData,
+                    dateAdded: new Date().toISOString()
+                });
+                console.log("✅ Product added:", docRef.id);
+                return docRef.id;
+            } catch (error) {
+                console.error("❌ Error adding product:", error);
+                return null;
+            }
+        }
+    </script>
+</head>
+<body>
+    <div class="form-container">
+        <div class="form-box">
+            <div class="form-header">
+                <a href="dashboard.html" class="back-btn">← Back to Dashboard</a>
+                <h1>➕ Add New Item</h1>
+                <p>Add a new product to inventory</p>
+            </div>
+
+            <form id="addItemForm">
+                <div class="form-group">
+                    <label>Item Name *</label>
+                    <input type="text" id="itemName" placeholder="Enter item name" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Category *</label>
+                    <select id="itemCategory" required>
+                        <option value="">Select Category</option>
+                        <option value="Food">Food</option>
+                        <option value="Medicine">Medicine</option>
+                        <option value="Stationery">Stationery</option>
+                        <option value="Cleaning">Cleaning</option>
+                        <option value="Electronics">Electronics</option>
+                        <option value="Furniture">Furniture</option>
+                    </select>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Quantity *</label>
+                        <input type="number" id="itemQuantity" placeholder="0" min="0" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Price per Unit (KES) *</label>
+                        <input type="number" id="itemPrice" placeholder="0" min="0" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Supplier</label>
+                        <input type="text" id="itemSupplier" placeholder="Supplier name">
+                    </div>
+                    <div class="form-group">
+                        <label>Expiry Date</label>
+                        <input type="date" id="itemExpiry">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea id="itemDescription" rows="3" placeholder="Item description..."></textarea>
+                </div>
+
+                <button type="submit" class="btn-submit">✅ Add Item</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('addItemForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const name = document.getElementById('itemName').value;
+            const category = document.getElementById('itemCategory').value;
+            const quantity = parseInt(document.getElementById('itemQuantity').value) || 0;
+            const price = parseInt(document.getElementById('itemPrice').value) || 0;
+            const supplier = document.getElementById('itemSupplier').value || 'N/A';
+            const expiry = document.getElementById('itemExpiry').value || '';
+            const description = document.getElementById('itemDescription').value || '';
+            
+            if (name === '' || category === '' || quantity === 0) {
+                alert('❌ Please fill in all required fields');
+                return;
+            }
+            
+            // Add to Firebase
+            // Get current user
+const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+
+const result = await addProduct({
+    name: name,
+    category: category,
+    quantity: quantity,
+    price: price,
+    supplier: supplier,
+    expiryDate: expiry,
+    description: description,
+    companyId: currentUser?.companyId || 'default'  // 👈 ADD THIS
+});
+            
+            if (result) {
+                alert(`✅ Item Added Successfully!\n\n📦 Item: ${name}\n📂 Category: ${category}\n📊 Quantity: ${quantity}\n💰 Price: KES ${price}\n🚚 Supplier: ${supplier}\n\n🔄 Dashboard will update!`);
+                this.reset();
+            } else {
+                alert('❌ Error adding item. Please try again.');
+            }
+        });
+    </script>
+</body>
+</html>

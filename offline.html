@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Offline - SmartStock</title>
+    
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- PWA Support -->
+    <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" href="images/icon-192.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#667eea">
+    <script src="/sw-register.js"></script>
+    <script src="offline-sync.js"></script>
+</head>
+<body>
+    <div style="display: flex; justify-content: center; align-items: center; min-height: 100vh; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px;">
+        <div style="background: white; border-radius: 20px; padding: 40px; max-width: 400px; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
+            <div style="font-size: 4rem; margin-bottom: 20px;">📡</div>
+            <h1 style="color: #333; margin-bottom: 10px;">You're Offline</h1>
+            <p style="color: #888; margin-bottom: 20px;">
+                You don't have an internet connection right now.
+            </p>
+            <p style="color: #666; font-size: 0.9rem; margin-bottom: 20px;">
+                Don't worry! Your data will be saved locally and synced automatically when you're back online.
+            </p>
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+                <button onclick="location.reload()" style="padding: 12px; background: #667eea; color: white; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; font-family: 'Poppins', sans-serif;">🔄 Try Again</button>
+                <button onclick="window.location.href='dashboard.html'" style="padding: 12px; background: #f0f2ff; color: #667eea; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; font-family: 'Poppins', sans-serif;">📊 Go to Dashboard</button>
+            </div>
+            <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #f0f0f0; font-size: 0.8rem; color: #999;">
+                SmartStock • Inventory Management
+            </div>
+        </div>
+    </div>
+</body>
+</html>

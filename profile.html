@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Stock - User Profile</title>
+    
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- PWA Support -->
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="images/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#667eea">
+<script src="/sw-register.js"></script>
+<script src="offline-sync.js"></script>
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyAwcI_RRe3nRS8ZLxExsyyT4PDdtv5g4kg",
+            authDomain: "smart-stock-app-da50f.firebaseapp.com",
+            projectId: "smart-stock-app-da50f",
+            storageBucket: "smart-stock-app-da50f.appspot.com",
+            messagingSenderId: "512981075308",
+            appId: "1:512981075308:web:491c04288f19aa26775f49",
+            measurementId: "G-QPCK6Q566V"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        console.log("🔥 Firebase connected!");
+    </script>
+</head>
+<body>
+    <div class="profile-container">
+        <div class="profile-box">
+            <div class="profile-header">
+                <a href="dashboard.html" class="back-btn" id="backToDashboard">← Back to Dashboard</a>
+                <h1>📦 SMART STOCK</h1>
+                <p>User Profile</p>
+            </div>
+
+            <div class="profile-card">
+                <!-- Profile Photo -->
+                <div class="profile-photo">
+                    <div class="photo-placeholder" id="profilePhoto">
+                        <span>👤</span>
+                    </div>
+                    <button class="btn-photo" id="changePhoto">📷 Change Picture</button>
+                </div>
+
+                <!-- ===== VIEW MODE ===== -->
+                <div id="viewMode">
+                    <div class="profile-info">
+                        <div class="info-group">
+                            <label>Full Name</label>
+                            <p id="displayName">John Doe</p>
+                        </div>
+
+                        <div class="info-group">
+                            <label>Employee Number</label>
+                            <p id="displayEmployeeNo">EMP-2026-001</p>
+                        </div>
+
+                        <div class="info-group">
+                            <label>Email Address</label>
+                            <p id="displayEmail">john.doe@smartstock.com</p>
+                        </div>
+
+                        <div class="info-group">
+                            <label>Phone Number</label>
+                            <p id="displayPhone">+254 700 000 000</p>
+                        </div>
+
+                        <div class="info-group">
+                            <label>Department</label>
+                            <p id="displayDepartment">Inventory Management</p>
+                        </div>
+
+                        <div class="info-group">
+                            <label>Role</label>
+                            <p id="displayRole">Storekeeper</p>
+                        </div>
+
+                        <div class="info-group">
+                            <label>Date Joined</label>
+                            <p id="displayDateJoined">January 15, 2026</p>
+                        </div>
+
+                        <div class="info-group">
+                            <label>Last Login</label>
+                            <p id="displayLastLogin">Today, 2:30 PM</p>
+                        </div>
+                    </div>
+
+                    <div class="profile-actions">
+                        <button class="btn-action btn-edit" id="editProfile">✏️ Edit Profile</button>
+                        <button class="btn-action btn-password" id="changePassword">🔒 Change Password</button>
+                    </div>
+                </div>
+
+                <!-- ===== EDIT MODE ===== -->
+                <div id="editMode" style="display: none;">
+                    <h3 style="text-align: center; margin-bottom: 20px;">✏️ Edit Profile</h3>
+                    
+                    <div class="profile-info">
+                        <div class="info-group">
+                            <label>Full Name</label>
+                            <input type="text" id="editName" value="John Doe" class="edit-input">
+                        </div>
+
+                        <div class="info-group">
+                            <label>Employee Number</label>
+                            <input type="text" id="editEmployeeNo" value="EMP-2026-001" class="edit-input" readonly>
+                        </div>
+
+                        <div class="info-group">
+                            <label>Email Address</label>
+                            <input type="email" id="editEmail" value="john.doe@smartstock.com" class="edit-input">
+                        </div>
+
+                        <div class="info-group">
+                            <label>Phone Number</label>
+                            <input type="text" id="editPhone" value="+254 700 000 000" class="edit-input">
+                        </div>
+
+                        <div class="info-group">
+                            <label>Department</label>
+                            <input type="text" id="editDepartment" value="Inventory Management" class="edit-input">
+                        </div>
+
+                        <div class="info-group">
+                            <label>Role</label>
+                            <select id="editRole" class="edit-input">
+                                <option value="Admin">👑 Admin</option>
+                                <option value="Manager">📊 Manager</option>
+                                <option value="Stock Controller">📦 Stock Controller</option>
+                                <option value="Storekeeper" selected>📥 Storekeeper</option>
+                                <option value="Department User">👤 Department User</option>
+                            </select>
+                        </div>
+
+                        <div class="info-group">
+                            <label>Date Joined</label>
+                            <input type="text" id="editDateJoined" value="January 15, 2026" class="edit-input" readonly>
+                        </div>
+
+                        <div class="info-group">
+                            <label>Last Login</label>
+                            <input type="text" id="editLastLogin" value="Today, 2:30 PM" class="edit-input" readonly>
+                        </div>
+                    </div>
+
+                    <div class="profile-actions">
+                        <button class="btn-action btn-edit" id="saveProfile">💾 Save Changes</button>
+                        <button class="btn-action btn-password" id="cancelEdit">❌ Cancel</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============================================
+        // PROFILE PAGE - COMPLETE FUNCTIONALITY
+        // ============================================
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log("👤 Profile page loaded!");
+            
+            // ============================================
+            // LOAD SAVED PROFILE DATA
+            // ============================================
+            
+            function loadProfileData() {
+                // First try to get from currentUser
+                const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+                const saved = JSON.parse(localStorage.getItem('profileData'));
+                
+                // Use currentUser data if available, otherwise use saved
+                const data = currentUser || saved;
+                
+                if (data) {
+                    document.getElementById('displayName').textContent = data.name || 'John Doe';
+                    document.getElementById('displayEmployeeNo').textContent = data.employeeNo || 'EMP-2026-001';
+                    document.getElementById('displayEmail').textContent = data.email || 'john.doe@smartstock.com';
+                    document.getElementById('displayPhone').textContent = data.phone || '+254 700 000 000';
+                    document.getElementById('displayDepartment').textContent = data.department || 'Inventory Management';
+                    document.getElementById('displayRole').textContent = data.role || 'Storekeeper';
+                    document.getElementById('displayDateJoined').textContent = data.dateJoined || 'January 15, 2026';
+                    document.getElementById('displayLastLogin').textContent = data.lastLogin || 'Today, 2:30 PM';
+                }
+            }
+            
+            loadProfileData();
+            
+            // ============================================
+            // GET ELEMENTS
+            // ============================================
+            
+            const viewMode = document.getElementById('viewMode');
+            const editMode = document.getElementById('editMode');
+            const editBtn = document.getElementById('editProfile');
+            const saveBtn = document.getElementById('saveProfile');
+            const cancelBtn = document.getElementById('cancelEdit');
+            const changePasswordBtn = document.getElementById('changePassword');
+            const changePhotoBtn = document.getElementById('changePhoto');
+            const backBtn = document.getElementById('backToDashboard');
+            
+            // ============================================
+            // EDIT PROFILE - Show Edit Mode
+            // ============================================
+            
+            if (editBtn) {
+                editBtn.addEventListener('click', function() {
+                    // Get current values from view mode
+                    const name = document.getElementById('displayName').textContent;
+                    const employeeNo = document.getElementById('displayEmployeeNo').textContent;
+                    const email = document.getElementById('displayEmail').textContent;
+                    const phone = document.getElementById('displayPhone').textContent;
+                    const department = document.getElementById('displayDepartment').textContent;
+                    const role = document.getElementById('displayRole').textContent;
+                    const dateJoined = document.getElementById('displayDateJoined').textContent;
+                    const lastLogin = document.getElementById('displayLastLogin').textContent;
+                    
+                    // Set values in edit mode
+                    document.getElementById('editName').value = name;
+                    document.getElementById('editEmployeeNo').value = employeeNo;
+                    document.getElementById('editEmail').value = email;
+                    document.getElementById('editPhone').value = phone;
+                    document.getElementById('editDepartment').value = department;
+                    document.getElementById('editRole').value = role;
+                    document.getElementById('editDateJoined').value = dateJoined;
+                    document.getElementById('editLastLogin').value = lastLogin;
+                    
+                    // Switch modes
+                    viewMode.style.display = 'none';
+                    editMode.style.display = 'block';
+                });
+            }
+            
+            // ============================================
+            // SAVE PROFILE - Save Changes
+            // ============================================
+            
+            if (saveBtn) {
+                saveBtn.addEventListener('click', function() {
+                    // Get values from edit mode
+                    const newName = document.getElementById('editName').value;
+                    const newEmployeeNo = document.getElementById('editEmployeeNo').value;
+                    const newEmail = document.getElementById('editEmail').value;
+                    const newPhone = document.getElementById('editPhone').value;
+                    const newDepartment = document.getElementById('editDepartment').value;
+                    const newRole = document.getElementById('editRole').value;
+                    const newDateJoined = document.getElementById('editDateJoined').value;
+                    const newLastLogin = document.getElementById('editLastLogin').value;
+                    
+                    // Validate
+                    if (newName === '' || newEmail === '' || newPhone === '') {
+                        alert('❌ Name, Email, and Phone are required!');
+                        return;
+                    }
+                    
+                    // Update view mode display
+                    document.getElementById('displayName').textContent = newName;
+                    document.getElementById('displayEmployeeNo').textContent = newEmployeeNo;
+                    document.getElementById('displayEmail').textContent = newEmail;
+                    document.getElementById('displayPhone').textContent = newPhone;
+                    document.getElementById('displayDepartment').textContent = newDepartment;
+                    document.getElementById('displayRole').textContent = newRole;
+                    document.getElementById('displayDateJoined').textContent = newDateJoined;
+                    document.getElementById('displayLastLogin').textContent = newLastLogin;
+                    
+                    // ===== SAVE TO localStorage =====
+                    const profileData = {
+                        name: newName,
+                        employeeNo: newEmployeeNo,
+                        email: newEmail,
+                        phone: newPhone,
+                        department: newDepartment,
+                        role: newRole,
+                        dateJoined: newDateJoined,
+                        lastLogin: newLastLogin
+                    };
+                    localStorage.setItem('profileData', JSON.stringify(profileData));
+                    
+                    // Also update currentUser
+                    const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+                    if (currentUser) {
+                        currentUser.name = newName;
+                        currentUser.role = newRole;
+                        currentUser.email = newEmail;
+                        currentUser.phone = newPhone;
+                        currentUser.department = newDepartment;
+                        localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                    }
+                    
+                    // Switch back to view mode
+                    viewMode.style.display = 'block';
+                    editMode.style.display = 'none';
+                    
+                    alert('✅ Profile updated successfully!');
+                });
+            }
+            
+            // ============================================
+            // CANCEL EDIT
+            // ============================================
+            
+            if (cancelBtn) {
+                cancelBtn.addEventListener('click', function() {
+                    viewMode.style.display = 'block';
+                    editMode.style.display = 'none';
+                });
+            }
+            
+            // ============================================
+            // CHANGE PASSWORD
+            // ============================================
+            
+            if (changePasswordBtn) {
+                changePasswordBtn.addEventListener('click', function() {
+                    const currentPassword = prompt('🔒 Enter your current password:');
+                    if (currentPassword === null) return;
+                    
+                    if (currentPassword === '') {
+                        alert('❌ Please enter your current password');
+                        return;
+                    }
+                    
+                    const newPassword = prompt('📝 Enter your new password (min 6 characters):');
+                    if (newPassword === null) return;
+                    
+                    if (newPassword.length < 6) {
+                        alert('❌ Password must be at least 6 characters long');
+                        return;
+                    }
+                    
+                    const confirmPassword = prompt('✅ Confirm your new password:');
+                    if (confirmPassword === null) return;
+                    
+                    if (newPassword !== confirmPassword) {
+                        alert('❌ Passwords do not match!');
+                        return;
+                    }
+                    
+                    alert('✅ Password changed successfully!');
+                });
+            }
+            
+            // ============================================
+            // CHANGE PICTURE
+            // ============================================
+            
+            if (changePhotoBtn) {
+                changePhotoBtn.addEventListener('click', function() {
+                    const fileInput = document.createElement('input');
+                    fileInput.type = 'file';
+                    fileInput.accept = 'image/*';
+                    fileInput.onchange = function(e) {
+                        const file = e.target.files[0];
+                        if (file) {
+                            const reader = new FileReader();
+                            reader.onload = function(event) {
+                                const photoPlaceholder = document.querySelector('.photo-placeholder');
+                                if (photoPlaceholder) {
+                                    photoPlaceholder.innerHTML = '<img src="' + event.target.result + '" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">';
+                                    
+                                    // Save to localStorage
+                                    const profileData = JSON.parse(localStorage.getItem('profileData') || '{}');
+                                    profileData.profilePicture = event.target.result;
+                                    localStorage.setItem('profileData', JSON.stringify(profileData));
+                                    
+                                    alert('📷 Profile picture updated successfully!');
+                                }
+                            };
+                            reader.readAsDataURL(file);
+                        }
+                    };
+                    fileInput.click();
+                });
+            }
+            
+            // ============================================
+            // BACK TO DASHBOARD
+            // ============================================
+            
+            if (backBtn) {
+                backBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    window.location.href = 'dashboard.html';
+                });
+            }
+            
+            // ============================================
+            // DARK MODE
+            // ============================================
+            
+            const savedSettings = JSON.parse(localStorage.getItem('settings'));
+            if (savedSettings && savedSettings.darkMode) {
+                document.body.style.background = '#0f0f1a';
+                const profileBox = document.querySelector('.profile-box');
+                if (profileBox) {
+                    profileBox.style.background = '#1a1a2e';
+                    profileBox.style.color = '#e0e0e0';
+                }
+                document.querySelectorAll('.info-group').forEach(function(el) {
+                    el.style.background = '#252540';
+                    el.style.color = '#e0e0e0';
+                });
+                document.querySelectorAll('input, select').forEach(function(el) {
+                    el.style.background = '#252540';
+                    el.style.color = '#e0e0e0';
+                    el.style.borderColor = '#444';
+                });
+                document.querySelectorAll('label').forEach(function(el) {
+                    el.style.color = '#999';
+                });
+                const header = document.querySelector('.profile-header h1');
+                if (header) header.style.color = '#e0e0e0';
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Stock - Receive Stock</title>
+    
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- PWA Support -->
+    <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" href="images/icon-192.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#667eea">
+   <script src="/sw-register.js"></script>
+    <script src="offline-sync.js"></script>
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyAwcI_RRe3nRS8ZLxExsyyT4PDdtv5g4kg",
+            authDomain: "smart-stock-app-da50f.firebaseapp.com",
+            projectId: "smart-stock-app-da50f",
+            storageBucket: "smart-stock-app-da50f.appspot.com",
+            messagingSenderId: "512981075308",
+            appId: "1:512981075308:web:491c04288f19aa26775f49",
+            measurementId: "G-QPCK6Q566V"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        console.log("🔥 Firebase connected!");
+
+        async function getProducts() {
+            try {
+                const snapshot = await db.collection('products').get();
+                const products = [];
+                snapshot.forEach(doc => {
+                    products.push({ id: doc.id, ...doc.data() });
+                });
+                return products;
+            } catch (error) {
+                console.error("❌ Error:", error);
+                return [];
+            }
+        }
+
+        async function addProduct(productData) {
+            try {
+                const docRef = await db.collection('products').add({
+                    ...productData,
+                    dateAdded: new Date().toISOString()
+                });
+                console.log("✅ Product added:", docRef.id);
+                return docRef.id;
+            } catch (error) {
+                console.error("❌ Error adding product:", error);
+                return null;
+            }
+        }
+
+        async function updateProduct(productId, data) {
+            try {
+                await db.collection('products').doc(productId).update(data);
+                console.log("✅ Product updated:", productId);
+                return true;
+            } catch (error) {
+                console.error("❌ Error updating product:", error);
+                return false;
+            }
+        }
+
+        async function getSuppliers() {
+            try {
+                const snapshot = await db.collection('suppliers').get();
+                const suppliers = [];
+                snapshot.forEach(doc => {
+                    suppliers.push({ id: doc.id, ...doc.data() });
+                });
+                return suppliers;
+            } catch (error) {
+                console.error("❌ Error:", error);
+                return [];
+            }
+        }
+
+        async function saveReceiving(data) {
+            try {
+                const docRef = await db.collection('stockReceiving').add({
+                    ...data,
+                    date: new Date().toISOString(),
+                    status: 'Completed'
+                });
+                console.log("✅ Receiving saved:", docRef.id);
+                return docRef.id;
+            } catch (error) {
+                console.error("❌ Error saving receiving:", error);
+                return null;
+            }
+        }
+    </script>
+</head>
+<body>
+    <div class="form-container" style="max-width: 100%; padding: 10px;">
+        <div class="form-box" style="max-width: 100%; padding: 15px;">
+            <div class="form-header">
+                <a href="dashboard.html" class="back-btn">← Back</a>
+                <h1>📥 Receive Stock</h1>
+                <p>Record incoming stock</p>
+            </div>
+
+            <form id="receiveForm">
+                <div class="form-group">
+                    <label>Supplier Name</label>
+                    <select id="supplierName" style="width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 8px; font-family: 'Poppins', sans-serif;">
+                        <option value="">Select supplier</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Delivery Note Number</label>
+                    <input type="text" id="deliveryNote" placeholder="Enter delivery note number" style="width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 8px; font-family: 'Poppins', sans-serif;">
+                </div>
+
+                <div class="form-group">
+                    <label>Product</label>
+                    <select id="receiveProduct" style="width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 8px; font-family: 'Poppins', sans-serif;">
+                        <option value="">Select product</option>
+                        <option value="new">➕ Add new product</option>
+                    </select>
+                </div>
+
+                <div id="newProductFields" style="display: none;">
+                    <div class="form-group">
+                        <label>New Product Name</label>
+                        <input type="text" id="newProductName" placeholder="Enter product name" style="width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 8px; font-family: 'Poppins', sans-serif;">
+                    </div>
+                    <div class="form-group">
+                        <label>Category</label>
+                        <select id="newProductCategory" style="width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 8px; font-family: 'Poppins', sans-serif;">
+                            <option value="Food">Food</option>
+                            <option value="Medicine">Medicine</option>
+                            <option value="Stationery">Stationery</option>
+                            <option value="Cleaning">Cleaning</option>
+                            <option value="Electronics">Electronics</option>
+                            <option value="Furniture">Furniture</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Price per Unit (KES)</label>
+                        <input type="number" id="newProductPrice" placeholder="0" style="width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 8px; font-family: 'Poppins', sans-serif;">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Quantity Received</label>
+                        <input type="number" id="receiveQty" placeholder="0" min="1" style="width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 8px; font-family: 'Poppins', sans-serif;">
+                    </div>
+                    <div class="form-group">
+                        <label>Batch Number</label>
+                        <input type="text" id="batchNumber" placeholder="Enter batch number" style="width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 8px; font-family: 'Poppins', sans-serif;">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Expiry Date</label>
+                    <input type="date" id="receiveExpiry" style="width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 8px; font-family: 'Poppins', sans-serif;">
+                </div>
+
+                <div class="form-group">
+                    <label>Received By</label>
+                    <input type="text" id="receivedBy" placeholder="Your name" style="width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 8px; font-family: 'Poppins', sans-serif;">
+                </div>
+
+                <div class="form-group">
+                    <label>Upload Delivery Note Photo</label>
+                    <input type="file" id="deliveryPhoto" accept="image/*" style="width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 8px; font-family: 'Poppins', sans-serif;">
+                </div>
+
+                <button type="submit" style="width: 100%; padding: 12px; background: #667eea; color: white; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; font-family: 'Poppins', sans-serif;">💾 Save Receiving</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', async function() {
+            // Load suppliers
+            const suppliers = await getSuppliers();
+            const supplierSelect = document.getElementById('supplierName');
+            supplierSelect.innerHTML = '<option value="">Select supplier</option>' +
+                suppliers.map(s => `<option value="${s.name}">${s.name}</option>`).join('') +
+                '<option value="new">➕ Add new supplier</option>';
+
+            // Load products
+            const products = await getProducts();
+            const productSelect = document.getElementById('receiveProduct');
+            productSelect.innerHTML = '<option value="">Select product</option>' +
+                products.map(p => `<option value="${p.id}">${p.name}</option>`).join('') +
+                '<option value="new">➕ Add new product</option>';
+
+            // Show/hide new product fields
+            productSelect.addEventListener('change', function() {
+                document.getElementById('newProductFields').style.display = this.value === 'new' ? 'block' : 'none';
+            });
+
+            // Supplier change
+            supplierSelect.addEventListener('change', function() {
+                if (this.value === 'new') {
+                    const name = prompt('Enter new supplier name:');
+                    if (name) {
+                        // Add to Firebase
+                        const newSupplier = { name: name, contact: '', phone: '' };
+                        db.collection('suppliers').add(newSupplier);
+                        alert('✅ Supplier added!');
+                        location.reload();
+                    }
+                }
+            });
+
+            // Form submit
+            document.getElementById('receiveForm').addEventListener('submit', async function(e) {
+                e.preventDefault();
+
+                const supplier = document.getElementById('supplierName').value;
+                const deliveryNote = document.getElementById('deliveryNote').value;
+                const productId = document.getElementById('receiveProduct').value;
+                const qty = parseInt(document.getElementById('receiveQty').value);
+                const batchNumber = document.getElementById('batchNumber').value;
+                const expiry = document.getElementById('receiveExpiry').value;
+                const receivedBy = document.getElementById('receivedBy').value;
+
+                if (!supplier || !productId || !qty || !receivedBy) {
+                    alert('❌ Please fill in all required fields');
+                    return;
+                }
+
+                let productName = '';
+                let productCategory = '';
+                let productPrice = 0;
+                let productIdToUpdate = productId;
+
+                if (productId === 'new') {
+                    productName = document.getElementById('newProductName').value;
+                    productCategory = document.getElementById('newProductCategory').value;
+                    productPrice = parseInt(document.getElementById('newProductPrice').value) || 0;
+                    if (!productName) {
+                        alert('❌ Please enter new product name');
+                        return;
+                    }
+                    // Add new product
+                    const newId = await addProduct({
+                        name: productName,
+                        category: productCategory,
+                        quantity: qty,
+                        price: productPrice,
+                        supplier: supplier,
+                        expiryDate: expiry,
+                        batchNumber: batchNumber
+                    });
+                    productIdToUpdate = newId;
+                } else {
+                    const product = products.find(p => p.id === productId);
+                    productName = product.name;
+                    productCategory = product.category;
+                    productPrice = product.price || 0;
+                    // Update existing product
+                    const newQty = (product.quantity || 0) + qty;
+                    await updateProduct(productId, { quantity: newQty, supplier: supplier });
+                }
+
+                // Save receiving record
+                const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+                const companyId = currentUser?.companyId || 'default';
+                await saveReceiving({
+                    supplier: supplier,
+                    deliveryNote: deliveryNote,
+                    product: productName,
+                    productId: productIdToUpdate,
+                    quantity: qty,
+                    batchNumber: batchNumber,
+                    expiryDate: expiry,
+                    receivedBy: receivedBy
+                     companyId: companyId
+                });
+
+                alert('✅ Stock received successfully!\n\n📦 ' + productName + '\n📊 ' + qty + ' units\n🚚 ' + supplier);
+                this.reset();
+                document.getElementById('newProductFields').style.display = 'none';
+                location.reload();
+            });
+        });
+    </script>
+</body>
+</html>

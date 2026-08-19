@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Stock - Suppliers</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- PWA Support -->
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="images/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#667eea">
+<script src="/sw-register.js"></script>
+<script src="offline-sync.js"></script>
+    <!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+
+<!-- ===== ALL FIREBASE CODE IN ONE PLACE ===== -->
+<script>
+    // ============================================
+    // FIREBASE CONFIG
+    // ============================================
+    const firebaseConfig = {
+        apiKey: "AIzaSyAwcI_RRe3nRS8ZLxExsyyT4PDdtv5g4kg",
+        authDomain: "smart-stock-app-da50f.firebaseapp.com",
+        projectId: "smart-stock-app-da50f",
+        storageBucket: "smart-stock-app-da50f.appspot.com",
+        messagingSenderId: "512981075308",
+        appId: "1:512981075308:web:491c04288f19aa26775f49",
+        measurementId: "G-QPCK6Q566V"
+    };
+
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    console.log("🔥 Firebase connected!");
+
+    // ============================================
+    // PRODUCT FUNCTIONS
+    // ============================================
+
+    // Add Product
+    async function addProduct(productData) {
+        try {
+            const docRef = await db.collection('products').add({
+                ...productData,
+                dateAdded: new Date().toISOString()
+            });
+            console.log("✅ Product added:", docRef.id);
+            return docRef.id;
+        } catch (error) {
+            console.error("❌ Error adding product:", error);
+            return null;
+        }
+    }
+
+    // Get All Products
+    async function getProducts() {
+        try {
+            const snapshot = await db.collection('products').get();
+            const products = [];
+            snapshot.forEach(doc => {
+                products.push({ id: doc.id, ...doc.data() });
+            });
+            return products;
+        } catch (error) {
+            console.error("❌ Error getting products:", error);
+            return [];
+        }
+    }
+
+    // ============================================
+    // USER FUNCTIONS
+    // ============================================
+
+    // Get User by Email
+    async function getUserByEmail(email) {
+        try {
+            const snapshot = await db.collection('users')
+                .where('email', '==', email)
+                .get();
+            if (snapshot.empty) return null;
+            let user = null;
+            snapshot.forEach(doc => {
+                user = { id: doc.id, ...doc.data() };
+            });
+            return user;
+        } catch (error) {
+            console.error("❌ Error getting user:", error);
+            return null;
+        }
+    }
+
+    // Update User
+    async function updateUser(userId, data) {
+        try {
+            await db.collection('users').doc(userId).update(data);
+            console.log("✅ User updated:", userId);
+            return true;
+        } catch (error) {
+            console.error("❌ Error updating user:", error);
+            return false;
+        }
+    }
+
+    // Get All Users
+    async function getUsers() {
+        try {
+            const snapshot = await db.collection('users').get();
+            const users = [];
+            snapshot.forEach(doc => {
+                users.push({ id: doc.id, ...doc.data() });
+            });
+            return users;
+        } catch (error) {
+            console.error("❌ Error getting users:", error);
+            return [];
+        }
+    }
+
+    // Delete User
+    async function deleteUser(userId) {
+        try {
+            await db.collection('users').doc(userId).delete();
+            console.log("✅ User deleted:", userId);
+            return true;
+        } catch (error) {
+            console.error("❌ Error deleting user:", error);
+            return false;
+        }
+    }
+
+    // ============================================
+    // SUPPLIER FUNCTIONS
+    // ============================================
+
+    // Add Supplier
+    async function addSupplier(supplierData) {
+        try {
+            const docRef = await db.collection('suppliers').add(supplierData);
+            console.log("✅ Supplier added:", docRef.id);
+            return docRef.id;
+        } catch (error) {
+            console.error("❌ Error adding supplier:", error);
+            return null;
+        }
+    }
+
+    // Get All Suppliers
+    async function getSuppliers() {
+        try {
+            const snapshot = await db.collection('suppliers').get();
+            const suppliers = [];
+            snapshot.forEach(doc => {
+                suppliers.push({ id: doc.id, ...doc.data() });
+            });
+            return suppliers;
+        } catch (error) {
+            console.error("❌ Error getting suppliers:", error);
+            return [];
+        }
+    }
+
+    // ============================================
+    // EMAIL FUNCTIONS
+    // ============================================
+
+    // Log Email
+    async function logEmail(emailData) {
+        try {
+            const docRef = await db.collection('emailLogs').add({
+                ...emailData,
+                date: new Date().toISOString(),
+                status: 'Sent',
+                sentBy: 'System'
+            });
+            console.log("✅ Email logged:", docRef.id);
+            return docRef.id;
+        } catch (error) {
+            console.error("❌ Error logging email:", error);
+            return null;
+        }
+    }
+
+    // Get Email Logs
+    async function getEmailLogs() {
+        try {
+            const snapshot = await db.collection('emailLogs')
+                .orderBy('date', 'desc')
+                .get();
+            const logs = [];
+            snapshot.forEach(doc => {
+                logs.push({ id: doc.id, ...doc.data() });
+            });
+            return logs;
+        } catch (error) {
+            console.error("❌ Error getting email logs:", error);
+            return [];
+        }
+    }
+
+    // Get Email Settings
+    async function getEmailSettings() {
+        try {
+            const snapshot = await db.collection('emailSettings').doc('settings').get();
+            if (snapshot.exists) {
+                return snapshot.data();
+            }
+            return {
+                lowStockAlerts: true,
+                expiryAlerts: true,
+                passwordResetEmails: true,
+                newUserEmails: true,
+                supplierNotifications: true,
+                weeklyReports: false,
+                monthlyReports: false
+            };
+        } catch (error) {
+            console.error("❌ Error getting email settings:", error);
+            return {};
+        }
+    }
+
+    // Save Email Settings
+    async function saveEmailSettings(settings) {
+        try {
+            await db.collection('emailSettings').doc('settings').set(settings);
+            console.log("✅ Email settings saved!");
+            return true;
+        } catch (error) {
+            console.error("❌ Error saving email settings:", error);
+            return false;
+        }
+    }
+
+    // Send Welcome Email
+    async function sendWelcomeEmail(userEmail, userName) {
+        const emailData = {
+            type: 'Welcome Email',
+            recipient: userEmail,
+            subject: 'Welcome to SmartStock!',
+            message: `Hello ${userName},\n\nWelcome to SmartStock! Your account has been created successfully.\n\nPlease login to start managing your inventory.\n\nThank you,\nSmartStock Team`
+        };
+        await logEmail(emailData);
+        console.log(`📧 Welcome email sent to ${userEmail}`);
+        return true;
+    }
+
+    console.log("✅ All Firebase functions loaded!");
+</script>
+</head>
+<body>
+    <div class="form-container">
+        <div class="form-box" style="max-width: 800px;">
+            <div class="form-header">
+                <a href="dashboard.html" class="back-btn">← Back to Dashboard</a>
+                <h1>🚚 Suppliers</h1>
+                <p>Manage your suppliers</p>
+            </div>
+
+            <!-- Add Supplier Form -->
+            <form id="supplierForm" style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
+                <input type="text" id="supplierName" placeholder="Supplier Name" required style="flex: 2; padding: 10px; border: 2px solid #e0e0e0; border-radius: 8px; font-family: 'Poppins', sans-serif;">
+                <input type="text" id="supplierContact" placeholder="Contact Person" style="flex: 1; padding: 10px; border: 2px solid #e0e0e0; border-radius: 8px; font-family: 'Poppins', sans-serif;">
+                <input type="text" id="supplierPhone" placeholder="Phone" style="flex: 1; padding: 10px; border: 2px solid #e0e0e0; border-radius: 8px; font-family: 'Poppins', sans-serif;">
+                <button type="submit" style="padding: 10px 25px; background: #667eea; color: white; border: none; border-radius: 8px; cursor: pointer; font-family: 'Poppins', sans-serif;">➕ Add</button>
+            </form>
+
+            <!-- Suppliers Table -->
+            <div style="overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
+                    <thead>
+                        <tr style="background: #f8f9ff; border-bottom: 2px solid #e0e0e0;">
+                            <th style="padding: 12px; text-align: left;">Supplier</th>
+                            <th style="padding: 12px; text-align: left;">Contact</th>
+                            <th style="padding: 12px; text-align: left;">Phone</th>
+                            <th style="padding: 12px; text-align: center;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="supplierTableBody">
+                    </tbody>
+                </table>
+            </div>
+
+            <div style="text-align: center; margin-top: 15px; color: #888; font-size: 0.85rem;">
+                <span id="supplierCount">0</span> suppliers
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let suppliers = JSON.parse(localStorage.getItem('suppliers') || '[]');
+
+        function renderSuppliers() {
+            const tbody = document.getElementById('supplierTableBody');
+            if (suppliers.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; padding: 30px; color: #999;">No suppliers added yet.</td></tr>`;
+            } else {
+                tbody.innerHTML = suppliers.map((s, i) => `
+                    <tr style="border-bottom: 1px solid #f0f0f0;">
+                        <td style="padding: 12px;"><strong>${s.name}</strong></td>
+                        <td style="padding: 12px;">${s.contact || 'N/A'}</td>
+                        <td style="padding: 12px;">${s.phone || 'N/A'}</td>
+                        <td style="padding: 12px; text-align: center;">
+                            <button onclick="deleteSupplier(${i})" style="background: #fee2e2; color: #ef4444; border: none; padding: 5px 12px; border-radius: 6px; cursor: pointer;">Delete</button>
+                        </td>
+                    </tr>
+                `).join('');
+            }
+            document.getElementById('supplierCount').textContent = suppliers.length;
+        }
+
+        function deleteSupplier(index) {
+            if (confirm('Delete this supplier?')) {
+                suppliers.splice(index, 1);
+                localStorage.setItem('suppliers', JSON.stringify(suppliers));
+                renderSuppliers();
+            }
+        }
+
+        document.getElementById('supplierForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const name = document.getElementById('supplierName').value.trim();
+            const contact = document.getElementById('supplierContact').value.trim();
+            const phone = document.getElementById('supplierPhone').value.trim();
+
+            if (!name) {
+                alert('Please enter a supplier name');
+                return;
+            }
+
+            suppliers.push({ name, contact, phone });
+            localStorage.setItem('suppliers', JSON.stringify(suppliers));
+            this.reset();
+            renderSuppliers();
+            alert('✅ Supplier added successfully!');
+        });
+
+        document.addEventListener('DOMContentLoaded', renderSuppliers);
+    </script>
+</body>
+</html>

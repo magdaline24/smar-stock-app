@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Stock - Settings</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- PWA Support -->
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="images/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#667eea">
+<script src="/sw-register.js"></script>
+<script src="offline-sync.js"></script>
+</head>
+<body>
+    <div class="form-container">
+        <div class="form-box" style="max-width: 700px;">
+            <div class="form-header">
+                <a href="dashboard.html" class="back-btn">← Back to Dashboard</a>
+                <h1>⚙️ Settings</h1>
+                <p>System settings and preferences</p>
+            </div>
+
+            <!-- Settings Options -->
+            <div style="display: flex; flex-direction: column; gap: 15px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px; background: #f8f9ff; border-radius: 10px;">
+                    <div>
+                        <strong>🌙 Dark Mode</strong>
+                        <p style="margin: 0; font-size: 0.8rem; color: #888;">Toggle dark/light theme</p>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="darkModeToggle">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px; background: #f8f9ff; border-radius: 10px;">
+                    <div>
+                        <strong>🌐 Language</strong>
+                        <p style="margin: 0; font-size: 0.8rem; color: #888;">Select your preferred language</p>
+                    </div>
+                    <select id="languageSelect" style="padding: 8px 15px; border: 2px solid #e0e0e0; border-radius: 8px; font-family: 'Poppins', sans-serif;">
+                        <option value="en">English</option>
+                        <option value="sw">Swahili</option>
+                        <option value="fr">French</option>
+                    </select>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px; background: #f8f9ff; border-radius: 10px;">
+                    <div>
+                        <strong>💰 Currency</strong>
+                        <p style="margin: 0; font-size: 0.8rem; color: #888;">Set your default currency</p>
+                    </div>
+                    <select id="currencySelect" style="padding: 8px 15px; border: 2px solid #e0e0e0; border-radius: 8px; font-family: 'Poppins', sans-serif;">
+                        <option value="KES">KES - Kenyan Shilling</option>
+                        <option value="USD">USD - US Dollar</option>
+                        <option value="EUR">EUR - Euro</option>
+                        <option value="GBP">GBP - British Pound</option>
+                    </select>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px; background: #f8f9ff; border-radius: 10px;">
+                    <div>
+                        <strong>🔔 Notifications</strong>
+                        <p style="margin: 0; font-size: 0.8rem; color: #888;">Enable/disable notifications</p>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="notifToggle" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+
+                <button onclick="saveSettings()" style="padding: 14px; background: #667eea; color: white; border: none; border-radius: 10px; font-size: 1rem; font-weight: 600; cursor: pointer; font-family: 'Poppins', sans-serif; margin-top: 10px;">💾 Save Settings</button>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        /* Toggle Switch */
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 26px;
+        }
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: #ccc;
+            transition: 0.3s;
+            border-radius: 26px;
+        }
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 3px;
+            bottom: 3px;
+            background: white;
+            transition: 0.3s;
+            border-radius: 50%;
+        }
+        .toggle-switch input:checked + .toggle-slider {
+            background: #667eea;
+        }
+        .toggle-switch input:checked + .toggle-slider:before {
+            transform: translateX(24px);
+        }
+    </style>
+
+    <script>
+        function saveSettings() {
+            const darkMode = document.getElementById('darkModeToggle').checked;
+            const language = document.getElementById('languageSelect').value;
+            const currency = document.getElementById('currencySelect').value;
+            const notifications = document.getElementById('notifToggle').checked;
+
+            const settings = { darkMode, language, currency, notifications };
+            localStorage.setItem('settings', JSON.stringify(settings));
+
+            alert('✅ Settings saved successfully!');
+            console.log('Settings:', settings);
+        }
+
+        // Load saved settings
+        document.addEventListener('DOMContentLoaded', function() {
+            const saved = JSON.parse(localStorage.getItem('settings'));
+            if (saved) {
+                document.getElementById('darkModeToggle').checked = saved.darkMode || false;
+                document.getElementById('languageSelect').value = saved.language || 'en';
+                document.getElementById('currencySelect').value = saved.currency || 'KES';
+                document.getElementById('notifToggle').checked = saved.notifications !== false;
+            }
+        });
+    </script>
+</body>
+</html>
+<script>
+    // ============================================
+    // APPLY DARK MODE TO ALL PAGES
+    // ============================================
+    function applyDarkMode(isDark) {
+        if (isDark) {
+            // Dark mode ON
+            document.body.style.background = '#0f0f1a';
+            document.body.style.color = '#e0e0e0';
+            
+            // All containers
+            document.querySelectorAll('.container, .login-container, .profile-container, .dashboard-container, .form-container').forEach(el => {
+                el.style.background = '#0f0f1a';
+            });
+            
+            // All boxes/cards
+            document.querySelectorAll('.login-box, .profile-box, .form-box, .stat-card, .card, .chart-card, .alerts-card, .profile-card').forEach(el => {
+                el.style.background = '#1a1a2e';
+                el.style.color = '#e0e0e0';
+                el.style.borderColor = '#333';
+            });
+            
+            // Info groups
+            document.querySelectorAll('.info-group, .activity-item, .alert-item').forEach(el => {
+                el.style.background = '#252540';
+                el.style.color = '#e0e0e0';
+            });
+            
+            // Inputs
+            document.querySelectorAll('input, select, textarea').forEach(el => {
+                el.style.background = '#252540';
+                el.style.color = '#e0e0e0';
+                el.style.borderColor = '#444';
+            });
+            
+            // Tables
+            document.querySelectorAll('.transaction-table td, .transaction-table th').forEach(el => {
+                el.style.borderColor = '#333';
+                el.style.color = '#e0e0e0';
+            });
+            
+            // Headers
+            document.querySelectorAll('.form-header h1, .form-header p, .welcome-text h1, .welcome-text p, .card-header h3').forEach(el => {
+                el.style.color = '#e0e0e0';
+            });
+            
+            // Labels
+            document.querySelectorAll('label, .info-group label').forEach(el => {
+                el.style.color = '#999';
+            });
+            
+            // Profile header
+            document.querySelectorAll('.profile-header h1, .profile-header p, .sidebar-header h2, .sidebar-header p').forEach(el => {
+                el.style.color = '#e0e0e0';
+            });
+            
+        } else {
+            // Dark mode OFF - Reset to default
+            document.body.style.background = '';
+            document.body.style.color = '';
+            
+            document.querySelectorAll('.container, .login-container, .profile-container, .dashboard-container, .form-container').forEach(el => {
+                el.style.background = '';
+            });
+            
+            document.querySelectorAll('.login-box, .profile-box, .form-box, .stat-card, .card, .chart-card, .alerts-card, .profile-card').forEach(el => {
+                el.style.background = '';
+                el.style.color = '';
+                el.style.borderColor = '';
+            });
+            
+            document.querySelectorAll('.info-group, .activity-item, .alert-item').forEach(el => {
+                el.style.background = '';
+                el.style.color = '';
+            });
+            
+            document.querySelectorAll('input, select, textarea').forEach(el => {
+                el.style.background = '';
+                el.style.color = '';
+                el.style.borderColor = '';
+            });
+            
+            document.querySelectorAll('.transaction-table td, .transaction-table th').forEach(el => {
+                el.style.borderColor = '';
+                el.style.color = '';
+            });
+            
+            document.querySelectorAll('.form-header h1, .form-header p, .welcome-text h1, .welcome-text p, .card-header h3').forEach(el => {
+                el.style.color = '';
+            });
+            
+            document.querySelectorAll('label, .info-group label').forEach(el => {
+                el.style.color = '';
+            });
+            
+            document.querySelectorAll('.profile-header h1, .profile-header p, .sidebar-header h2, .sidebar-header p').forEach(el => {
+                el.style.color = '';
+            });
+        }
+    }
+
+    // ============================================
+    // SAVE SETTINGS
+    // ============================================
+    function saveSettings() {
+        const darkMode = document.getElementById('darkModeToggle').checked;
+        const language = document.getElementById('languageSelect').value;
+        const currency = document.getElementById('currencySelect').value;
+        const notifications = document.getElementById('notifToggle').checked;
+
+        const settings = { darkMode, language, currency, notifications };
+        localStorage.setItem('settings', JSON.stringify(settings));
+
+        // Apply dark mode immediately
+        applyDarkMode(darkMode);
+
+        alert('✅ Settings saved and applied!');
+        console.log('Settings saved:', settings);
+    }
+
+    // ============================================
+    // LOAD SAVED SETTINGS ON PAGE LOAD
+    // ============================================
+    document.addEventListener('DOMContentLoaded', function() {
+        const saved = JSON.parse(localStorage.getItem('settings'));
+        if (saved) {
+            document.getElementById('darkModeToggle').checked = saved.darkMode || false;
+            document.getElementById('languageSelect').value = saved.language || 'en';
+            document.getElementById('currencySelect').value = saved.currency || 'KES';
+            document.getElementById('notifToggle').checked = saved.notifications !== false;
+            
+            // Apply dark mode
+            applyDarkMode(saved.darkMode);
+        }
+    });
+</script>

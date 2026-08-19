@@ -1,0 +1,172 @@
+// ============================================
+// SMARTSTOCK - SERVICE WORKER (OFFLINE MODE)
+// ============================================
+
+const CACHE_NAME = 'smartstock-v2';
+const OFFLINE_PAGE = '/offline.html';
+
+const urlsToCache = [
+  '/',
+  '/index.html',
+  '/dashboard.html',
+  '/profile.html',
+  '/inventory.html',
+  '/add-item.html',
+  '/receive-stock.html',
+  '/issue-stock.html',
+  '/stock-count.html',
+  '/reports-dashboard.html',
+  '/email-settings.html',
+  '/email-log.html',
+  '/settings.html',
+  '/users.html',
+  '/suppliers.html',
+  '/notifications.html',
+  '/barcode-scanner.html',
+  '/offline.html',
+  '/css/style.css',
+  '/js/script.js',
+  '/images/icon-192.png',
+  '/images/icon-512.png'
+];
+
+// ===== INSTALL =====
+self.addEventListener('install', function(event) {
+  event.waitUntil(
+    caches.open(CACHE_NAME)
+      .then(function(cache) {
+        console.log('📦 Cache opened');
+        return cache.addAll(urlsToCache);
+      })
+      .then(function() {
+        return self.skipWaiting();
+      })
+  );
+});
+
+// ===== ACTIVATE =====
+self.addEventListener('activate', function(event) {
+  event.waitUntil(
+    caches.keys().then(function(cacheNames) {
+      return Promise.all(
+        cacheNames.map(function(cacheName) {
+          if (cacheName !== CACHE_NAME) {
+            console.log('🗑️ Deleting old cache:', cacheName);
+            return caches.delete(cacheName);
+          }
+        })
+      );
+    }).then(function() {
+      return self.clients.claim();
+    })
+  );
+});
+
+// ===== FETCH - OFFLINE SUPPORT =====
+self.addEventListener('fetch', function(event) {
+  event.respondWith(
+    caches.match(event.request)
+      .then(function(response) {
+        // Return cached response if found
+        if (response) {
+          return response;
+        }
+        // Otherwise fetch from network
+        return fetch(event.request)
+          .then(function(response) {
+            // Don't cache if not a valid response
+            if (!response || response.status !== 200 || response.type !== 'basic') {
+              return response;
+            }
+            // Clone response and cache it
+            const responseToCache = response.clone();
+            caches.open(CACHE_NAME)
+              .then(function(cache) {
+                cache.put(event.request, responseToCache);
+              });
+            return response;
+          })
+          .catch(function() {
+            // Return offline fallback
+            return caches.match('/offline.html');
+          });
+      })
+  );
+});
+
+// ===== BACKGROUND SYNC (Offline Data Sync) =====
+self.addEventListener('sync', function(event) {
+  if (event.tag === 'sync-offline-data') {
+    event.waitUntil(syncOfflineData());
+  }
+});
+
+async function syncOfflineData() {
+  try {
+    // Get offline data from IndexedDB or localStorage
+    const offlineData = JSON.parse(localStorage.getItem('offlineQueue') || '[]');
+    
+    if (offlineData.length === 0) {
+      console.log('✅ No offline data to sync');
+      return;
+    }
+    
+    console.log(`🔄 Syncing ${offlineData.length} offline items...`);
+    
+    // Process each offline item
+    for (const item of offlineData) {
+      try {
+        // Send to Firebase
+        const response = await fetch(item.url, {
+          method: item.method || 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(item.data)
+        });
+        
+        if (response.ok) {
+          console.log(`✅ Synced: ${item.url}`);
+          // Remove from queue
+          const index = offlineData.indexOf(item);
+          offlineData.splice(index, 1);
+          localStorage.setItem('offlineQueue', JSON.stringify(offlineData));
+        }
+      } catch (error) {
+        console.error('❌ Sync failed for:', item.url, error);
+      }
+    }
+    
+    console.log('✅ Offline sync complete');
+  } catch (error) {
+    console.error('❌ Sync error:', error);
+  }
+}
+
+// ===== PUSH NOTIFICATIONS =====
+self.addEventListener('push', function(event) {
+  const data = event.data ? event.data.json() : {};
+  const title = data.title || 'SmartStock Alert';
+  const options = {
+    body: data.body || 'You have a new notification',
+    icon: '/images/icon-192.png',
+    badge: '/images/icon-192.png',
+    vibrate: [200, 100, 200],
+    data: {
+      url: data.url || '/dashboard.html'
+    }
+  };
+
+  event.waitUntil(
+    self.registration.showNotification(title, options)
+  );
+});
+
+self.addEventListener('notificationclick', function(event) {
+  event.notification.close();
+  event.waitUntil(
+    clients.openWindow(event.notification.data.url || '/dashboard.html')
+  );
+});
+
+console.log('✅ Service Worker loaded with offline support!');

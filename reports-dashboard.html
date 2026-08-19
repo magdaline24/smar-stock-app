@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Stock - Reports</title>
+    
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- PWA Support -->
+    <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" href="images/icon-192.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#667eea">
+    <script src="/sw-register.js"></script>
+    <script src="offline-sync.js"></script>
+    
+    <!-- jsPDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+    
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyAwcI_RRe3nRS8ZLxExsyyT4PDdtv5g4kg",
+            authDomain: "smart-stock-app-da50f.firebaseapp.com",
+            projectId: "smart-stock-app-da50f",
+            storageBucket: "smart-stock-app-da50f.appspot.com",
+            messagingSenderId: "512981075308",
+            appId: "1:512981075308:web:491c04288f19aa26775f49",
+            measurementId: "G-QPCK6Q566V"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        console.log("🔥 Firebase connected!");
+
+        // ===== DATABASE FUNCTIONS =====
+        // Get All Products (Filtered by Company)
+async function getProducts() {
+    try {
+        const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+        const companyId = currentUser?.companyId || 'default';
+        
+        const snapshot = await db.collection('products')
+            .where('companyId', '==', companyId)
+            .get();
+        const products = [];
+        snapshot.forEach(doc => {
+            products.push({ id: doc.id, ...doc.data() });
+        });
+        return products;
+    } catch (error) {
+        console.error("❌ Error getting products:", error);
+        return [];
+    }
+}
+
+        async function getSuppliers() {
+            try {
+                const snapshot = await db.collection('suppliers').get();
+                const suppliers = [];
+                snapshot.forEach(doc => {
+                    suppliers.push({ id: doc.id, ...doc.data() });
+                });
+                return suppliers;
+            } catch (error) {
+                console.error("❌ Error:", error);
+                return [];
+            }
+        }
+
+        // ===== COMPANY DATA =====
+        async function getCompanyData() {
+            try {
+                const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+                if (!currentUser) return null;
+                
+                const userSnapshot = await db.collection('users')
+                    .where('email', '==', currentUser.email)
+                    .get();
+                
+                let companyId = 'default';
+                userSnapshot.forEach(doc => {
+                    const data = doc.data();
+                    companyId = data.companyId || 'default';
+                });
+                
+                const companyDoc = await db.collection('companies').doc(companyId).get();
+                if (companyDoc.exists) {
+                    return { id: companyDoc.id, ...companyDoc.data() };
+                }
+                return {
+                    name: 'SmartStock',
+                    logo: '📦',
+                    primaryColor: '#667eea',
+                    address: '',
+                    phone: ''
+                };
+            } catch (error) {
+                console.error('Error getting company:', error);
+                return {
+                    name: 'SmartStock',
+                    logo: '📦',
+                    primaryColor: '#667eea',
+                    address: '',
+                    phone: ''
+                };
+            }
+        }
+
+        // ============================================
+        // REPORT GENERATION
+        // ============================================
+        let currentReportData = [];
+        let currentReportType = '';
+
+        async function generateReport(type) {
+            const preview = document.getElementById('reportPreview');
+            const fromDate = document.getElementById('fromDate').value;
+            const toDate = document.getElementById('toDate').value;
+            const category = document.getElementById('categoryFilter').value;
+            
+            preview.innerHTML = '<div style="text-align:center;padding:40px;">⏳ Generating report...</div>';
+            
+            try {
+                const company = await getCompanyData();
+                const logoHtml = company?.logo && company.logo.startsWith('data:image') 
+                    ? `<img src="${company.logo}" style="max-height:60px;max-width:60px;border-radius:8px;">` 
+                    : company?.logo || '📦';
+                const companyName = company?.name || 'SmartStock';
+                const primaryColor = company?.primaryColor || '#667eea';
+                const address = company?.address || '';
+                const phone = company?.phone || '';
+                
+                let data = [];
+                let title = '';
+                
+                switch(type) {
+                    case 'inventory':
+                        data = await getProducts();
+                        title = '📦 Inventory Report';
+                        break;
+                    case 'suppliers':
+                        data = await getSuppliers();
+                        title = '🚚 Supplier Report';
+                        break;
+                    case 'low-stock':
+                        const allProducts = await getProducts();
+                        data = allProducts.filter(p => (p.quantity || 0) < 10);
+                        title = '⚠️ Low Stock Report';
+                        break;
+                    case 'expiring':
+                        const products = await getProducts();
+                        const today = new Date();
+                        const thirtyDays = new Date();
+                        thirtyDays.setDate(today.getDate() + 30);
+                        data = products.filter(p => {
+                            if (!p.expiryDate) return false;
+                            const expiry = new Date(p.expiryDate);
+                            return expiry >= today && expiry <= thirtyDays;
+                        });
+                        title = '⏰ Expiring Items Report';
+                        break;
+                    default:
+                        data = [];
+                        title = '📄 Report';
+                }
+                
+                if (category !== 'all' && data.length > 0) {
+                    data = data.filter(item => item.category === category);
+                }
+                
+                currentReportData = data;
+                currentReportType = type;
+                
+                if (data.length === 0) {
+                    preview.innerHTML = `<div style="text-align:center;padding:40px;color:#999;"><span style="font-size:3rem;">📭</span><p>No data found</p></div>`;
+                    return;
+                }
+                
+                const totalItems = data.length;
+                const totalValue = data.reduce((sum, item) => sum + ((item.price || 0) * (item.quantity || 0)), 0);
+                const lowStockCount = data.filter(p => (p.quantity || 0) < 10).length;
+                const headers = Object.keys(data[0] || {}).filter(k => k !== 'id');
+                
+                let reportHTML = `
+                    <div id="reportContent">
+                        <div class="report-header" style="border-bottom:3px solid ${primaryColor};padding-bottom:15px;margin-bottom:20px;text-align:center;">
+                            <div style="display:flex;align-items:center;justify-content:center;gap:10px;">
+                                ${logoHtml}
+                                <h1 style="margin:0;color:${primaryColor};font-size:2rem;">${companyName}</h1>
+                            </div>
+                            <p style="margin:0;color:#888;font-size:0.9rem;">Inventory Management System</p>
+                            <p style="margin:5px 0 0;color:#999;font-size:0.8rem;">${title} | Generated: ${new Date().toLocaleString()}</p>
+                            <p style="margin:0;color:#999;font-size:0.8rem;">Date Range: ${fromDate || 'All'} - ${toDate || 'All'}</p>
+                            ${address ? `<p style="margin:0;color:#999;font-size:0.8rem;">📍 ${address}</p>` : ''}
+                            ${phone ? `<p style="margin:0;color:#999;font-size:0.8rem;">📞 ${phone}</p>` : ''}
+                        </div>
+                        
+                        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:15px;margin:15px 0;">
+                            <div style="background:#f8f9ff;padding:15px;border-radius:10px;text-align:center;">
+                                <strong style="font-size:1.2rem;">${totalItems}</strong>
+                                <p style="margin:0;font-size:0.8rem;color:#888;">Total Items</p>
+                            </div>
+                            <div style="background:#f8f9ff;padding:15px;border-radius:10px;text-align:center;">
+                                <strong style="font-size:1.2rem;">KES ${totalValue.toLocaleString()}</strong>
+                                <p style="margin:0;font-size:0.8rem;color:#888;">Total Value</p>
+                            </div>
+                            <div style="background:#f8f9ff;padding:15px;border-radius:10px;text-align:center;">
+                                <strong style="font-size:1.2rem;">${lowStockCount}</strong>
+                                <p style="margin:0;font-size:0.8rem;color:#888;">Low Stock</p>
+                            </div>
+                        </div>
+                        
+                        <div style="overflow-x:auto;">
+                            <table style="width:100%;border-collapse:collapse;font-size:0.85rem;">
+                                <thead>
+                                    <tr style="background:${primaryColor};color:white;">
+                                        ${headers.map(h => `<th style="padding:10px;text-align:left;">${h.toUpperCase()}</th>`).join('')}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${data.slice(0, 20).map(item => `
+                                        <tr style="border-bottom:1px solid #f0f0f0;">
+                                            ${headers.map(h => `<td style="padding:8px;">${item[h] || 'N/A'}</td>`).join('')}
+                                        </tr>
+                                    `).join('')}
+                                    ${data.length > 20 ? `<tr><td colspan="${headers.length}" style="text-align:center;padding:10px;color:#888;">... and ${data.length - 20} more items</td></tr>` : ''}
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <div style="border-top:2px solid #e0e0e0;padding-top:15px;margin-top:20px;display:flex;justify-content:space-between;font-size:0.8rem;color:#888;">
+                            <span>Generated by: ${JSON.parse(localStorage.getItem('currentUser'))?.name || 'System'}</span>
+                            <span>Report #: RPT-${Date.now()}</span>
+                        </div>
+                    </div>
+                `;
+                
+                preview.innerHTML = reportHTML;
+                
+            } catch (error) {
+                console.error('Error:', error);
+                preview.innerHTML = '<div style="text-align:center;padding:40px;color:#ef4444;">❌ Error generating report</div>';
+            }
+        }
+
+        // ============================================
+        // EXPORT PDF
+        // ============================================
+        function exportPDF() {
+            const content = document.getElementById('reportContent');
+            if (!content) {
+                alert('📄 Please generate a report first!');
+                return;
+            }
+
+            try {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF('p', 'mm', 'a4');
+
+                const header = content.querySelector('.report-header');
+                const companyName = header?.querySelector('h1')?.textContent || 'SmartStock';
+                const reportTitle = header?.querySelector('p')?.textContent || 'Report';
+                
+                doc.setFontSize(18);
+                doc.setTextColor(102, 126, 234);
+                doc.text(companyName, 14, 20);
+                doc.setFontSize(10);
+                doc.setTextColor(136, 136, 136);
+                doc.text(reportTitle || 'Inventory Report', 14, 28);
+                doc.line(14, 32, 196, 32);
+
+                const table = content.querySelector('table');
+                if (table) {
+                    const headers = [];
+                    table.querySelectorAll('thead th').forEach(th => {
+                        headers.push(th.textContent.trim());
+                    });
+
+                    const rows = [];
+                    table.querySelectorAll('tbody tr').forEach(tr => {
+                        const row = [];
+                        tr.querySelectorAll('td').forEach(td => {
+                            row.push(td.textContent.trim());
+                        });
+                        if (row.length > 0) rows.push(row);
+                    });
+
+                    if (rows.length > 0) {
+                        doc.autoTable({
+                            head: [headers],
+                            body: rows,
+                            startY: 38,
+                            theme: 'striped',
+                            headStyles: {
+                                fillColor: [102, 126, 234],
+                                textColor: [255, 255, 255],
+                                fontSize: 8,
+                                fontStyle: 'bold'
+                            },
+                            bodyStyles: {
+                                fontSize: 7
+                            },
+                            margin: { left: 14, right: 14 }
+                        });
+                    }
+                }
+
+                const pageCount = doc.internal.getNumberOfPages();
+                for (let i = 1; i <= pageCount; i++) {
+                    doc.setPage(i);
+                    doc.setFontSize(7);
+                    doc.setTextColor(136, 136, 136);
+                    doc.text(`Page ${i} of ${pageCount}`, 190, 285, { align: 'right' });
+                    doc.line(14, 278, 196, 278);
+                    doc.text('SmartStock Inventory Management System', 14, 285);
+                }
+
+                doc.save(`report-${Date.now()}.pdf`);
+                alert('✅ PDF exported successfully!');
+                
+            } catch (error) {
+                console.error('PDF Error:', error);
+                alert('❌ Error generating PDF');
+            }
+        }
+
+        function exportExcel() {
+            const content = document.getElementById('reportContent');
+            if (!content) {
+                alert('Please generate a report first!');
+                return;
+            }
+
+            const table = content.querySelector('table');
+            if (!table) {
+                alert('No table data to export!');
+                return;
+            }
+
+            let csv = '';
+            const headers = table.querySelectorAll('thead th');
+            csv += Array.from(headers).map(h => `"${h.textContent.trim()}"`).join(',') + '\n';
+            
+            const rows = table.querySelectorAll('tbody tr');
+            rows.forEach(row => {
+                const cells = row.querySelectorAll('td');
+                csv += Array.from(cells).map(c => `"${c.textContent.trim()}"`).join(',') + '\n';
+            });
+
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `report-${Date.now()}.csv`;
+            a.click();
+            URL.revokeObjectURL(url);
+            alert('✅ Excel exported!');
+        }
+
+        function emailReport() {
+            alert('📧 Email Report coming soon!');
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const today = new Date();
+            const thirtyDaysAgo = new Date();
+            thirtyDaysAgo.setDate(today.getDate() - 30);
+            document.getElementById('fromDate').value = thirtyDaysAgo.toISOString().split('T')[0];
+            document.getElementById('toDate').value = today.toISOString().split('T')[0];
+        });
+    </script>
+</head>
+<body>
+    <div class="form-container" style="max-width:100%;padding:10px;">
+        <div class="form-box" style="max-width:100%;padding:15px;">
+            <div class="form-header">
+                <a href="dashboard.html" class="back-btn">← Back</a>
+                <h1>📄 Reports Dashboard</h1>
+                <p>Generate and manage your inventory reports</p>
+            </div>
+
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:15px;">
+                <button onclick="generateReport('inventory')" style="padding:15px;background:#f8f9ff;border:2px solid #667eea;border-radius:12px;cursor:pointer;font-family:'Poppins',sans-serif;font-size:0.9rem;">
+                    <span style="font-size:2rem;">📦</span><br><strong>Inventory</strong>
+                </button>
+                <button onclick="generateReport('suppliers')" style="padding:15px;background:#f8f9ff;border:2px solid #764ba2;border-radius:12px;cursor:pointer;font-family:'Poppins',sans-serif;font-size:0.9rem;">
+                    <span style="font-size:2rem;">🚚</span><br><strong>Suppliers</strong>
+                </button>
+                <button onclick="generateReport('low-stock')" style="padding:15px;background:#f8f9ff;border:2px solid #f59e0b;border-radius:12px;cursor:pointer;font-family:'Poppins',sans-serif;font-size:0.9rem;">
+                    <span style="font-size:2rem;">⚠️</span><br><strong>Low Stock</strong>
+                </button>
+                <button onclick="generateReport('expiring')" style="padding:15px;background:#f8f9ff;border:2px solid #ef4444;border-radius:12px;cursor:pointer;font-family:'Poppins',sans-serif;font-size:0.9rem;">
+                    <span style="font-size:2rem;">⏰</span><br><strong>Expiring</strong>
+                </button>
+            </div>
+
+            <div style="background:#f8f9ff;border-radius:12px;padding:15px;margin-bottom:15px;">
+                <h3 style="margin-bottom:10px;">📅 Report Filters</h3>
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;">
+                    <div>
+                        <label style="font-size:0.85rem;font-weight:500;">From Date</label>
+                        <input type="date" id="fromDate" style="width:100%;padding:8px;border:2px solid #e0e0e0;border-radius:8px;font-family:'Poppins',sans-serif;">
+                    </div>
+                    <div>
+                        <label style="font-size:0.85rem;font-weight:500;">To Date</label>
+                        <input type="date" id="toDate" style="width:100%;padding:8px;border:2px solid #e0e0e0;border-radius:8px;font-family:'Poppins',sans-serif;">
+                    </div>
+                    <div>
+                        <label style="font-size:0.85rem;font-weight:500;">Category</label>
+                        <select id="categoryFilter" style="width:100%;padding:8px;border:2px solid #e0e0e0;border-radius:8px;font-family:'Poppins',sans-serif;">
+                            <option value="all">All Categories</option>
+                            <option value="Food">Food</option>
+                            <option value="Medicine">Medicine</option>
+                            <option value="Stationery">Stationery</option>
+                            <option value="Cleaning">Cleaning</option>
+                            <option value="Electronics">Electronics</option>
+                            <option value="Furniture">Furniture</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:15px;">
+                <button onclick="exportPDF()" style="padding:10px 20px;background:#667eea;color:white;border:none;border-radius:10px;cursor:pointer;font-family:'Poppins',sans-serif;font-weight:500;">📄 Export PDF</button>
+                <button onclick="exportExcel()" style="padding:10px 20px;background:#22c55e;color:white;border:none;border-radius:10px;cursor:pointer;font-family:'Poppins',sans-serif;font-weight:500;">📊 Export Excel</button>
+                <button onclick="window.print()" style="padding:10px 20px;background:#f59e0b;color:white;border:none;border-radius:10px;cursor:pointer;font-family:'Poppins',sans-serif;font-weight:500;">🖨 Print</button>
+                <button onclick="emailReport()" style="padding:10px 20px;background:#764ba2;color:white;border:none;border-radius:10px;cursor:pointer;font-family:'Poppins',sans-serif;font-weight:500;">📧 Email</button>
+            </div>
+
+            <div id="reportPreview" style="background:white;border-radius:12px;padding:15px;border:2px solid #e0e0e0;min-height:150px;">
+                <div style="text-align:center;color:#999;padding:30px 0;">
+                    <span style="font-size:3rem;">📄</span>
+                    <p>Select a report type above to generate</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Stock - Security</title>
+    
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- PWA Support -->
+    <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" href="images/icon-192.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#667eea">
+   <script src="/sw-register.js"></script>
+    <script src="offline-sync.js"></script>
+</head>
+<body>
+    <div class="form-container" style="max-width: 100%; padding: 10px;">
+        <div class="form-box" style="max-width: 100%; padding: 15px;">
+            <div class="form-header">
+                <a href="settings.html" class="back-btn">← Back to Settings</a>
+                <h1>🔐 Security Settings</h1>
+                <p>Protect your account and data</p>
+            </div>
+
+            <!-- Security Options -->
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+                
+                <!-- PIN Login -->
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px; background: #f8f9ff; border-radius: 12px;">
+                    <div>
+                        <strong>🔑 PIN Login</strong>
+                        <p style="margin: 0; font-size: 0.8rem; color: #888;">Set a 4-digit PIN for quick access</p>
+                    </div>
+                    <button onclick="setupPIN()" style="padding: 8px 20px; background: #667eea; color: white; border: none; border-radius: 8px; cursor: pointer; font-family: 'Poppins', sans-serif;">Set PIN</button>
+                </div>
+
+                <!-- Fingerprint Login -->
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px; background: #f8f9ff; border-radius: 12px;">
+                    <div>
+                        <strong>👆 Fingerprint Login</strong>
+                        <p style="margin: 0; font-size: 0.8rem; color: #888;">Use fingerprint to unlock</p>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="fingerprintToggle" onchange="toggleFingerprint()">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+
+                <!-- Face ID -->
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px; background: #f8f9ff; border-radius: 12px;">
+                    <div>
+                        <strong>📸 Face ID</strong>
+                        <p style="margin: 0; font-size: 0.8rem; color: #888;">Use face recognition to unlock</p>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="faceIDToggle" onchange="toggleFaceID()">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+
+                <!-- Auto Logout -->
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px; background: #f8f9ff; border-radius: 12px;">
+                    <div>
+                        <strong>⏱️ Auto Logout</strong>
+                        <p style="margin: 0; font-size: 0.8rem; color: #888;">Logout after inactivity</p>
+                    </div>
+                    <select id="autoLogoutTime" onchange="setAutoLogout()" style="padding: 8px 15px; border: 2px solid #e0e0e0; border-radius: 8px; font-family: 'Poppins', sans-serif;">
+                        <option value="0">Disabled</option>
+                        <option value="5">5 minutes</option>
+                        <option value="15">15 minutes</option>
+                        <option value="30">30 minutes</option>
+                        <option value="60">1 hour</option>
+                    </select>
+                </div>
+
+                <!-- Session Timeout -->
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px; background: #f8f9ff; border-radius: 12px;">
+                    <div>
+                        <strong>⏰ Session Timeout</strong>
+                        <p style="margin: 0; font-size: 0.8rem; color: #888;">Auto logout after session expires</p>
+                    </div>
+                    <select id="sessionTimeout" onchange="setSessionTimeout()" style="padding: 8px 15px; border: 2px solid #e0e0e0; border-radius: 8px; font-family: 'Poppins', sans-serif;">
+                        <option value="0">Disabled</option>
+                        <option value="10">10 minutes</option>
+                        <option value="30">30 minutes</option>
+                        <option value="60">1 hour</option>
+                        <option value="120">2 hours</option>
+                    </select>
+                </div>
+
+                <!-- Device Authentication -->
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px; background: #f8f9ff; border-radius: 12px;">
+                    <div>
+                        <strong>📱 Device Authentication</strong>
+                        <p style="margin: 0; font-size: 0.8rem; color: #888;">Only allow this device to access</p>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="deviceAuthToggle" onchange="toggleDeviceAuth()">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+
+                <button onclick="saveSecuritySettings()" style="width: 100%; padding: 14px; background: #667eea; color: white; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; font-family: 'Poppins', sans-serif; margin-top: 10px;">💾 Save Security Settings</button>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 26px;
+        }
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: #ccc;
+            transition: 0.3s;
+            border-radius: 26px;
+        }
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 3px;
+            bottom: 3px;
+            background: white;
+            transition: 0.3s;
+            border-radius: 50%;
+        }
+        .toggle-switch input:checked + .toggle-slider {
+            background: #667eea;
+        }
+        .toggle-switch input:checked + .toggle-slider:before {
+            transform: translateX(24px);
+        }
+    </style>
+
+    <script>
+        // ============================================
+        // SECURITY SETTINGS
+        // ============================================
+
+        // Load saved security settings
+        document.addEventListener('DOMContentLoaded', function() {
+            const settings = JSON.parse(localStorage.getItem('securitySettings') || '{}');
+            if (settings) {
+                document.getElementById('fingerprintToggle').checked = settings.fingerprint || false;
+                document.getElementById('faceIDToggle').checked = settings.faceID || false;
+                document.getElementById('autoLogoutTime').value = settings.autoLogout || '0';
+                document.getElementById('sessionTimeout').value = settings.sessionTimeout || '0';
+                document.getElementById('deviceAuthToggle').checked = settings.deviceAuth || false;
+            }
+        });
+
+        // Setup PIN
+        function setupPIN() {
+            const pin = prompt('Enter a 4-digit PIN:');
+            if (pin && pin.length === 4 && !isNaN(pin)) {
+                const confirmPin = prompt('Confirm your 4-digit PIN:');
+                if (confirmPin === pin) {
+                    localStorage.setItem('userPIN', pin);
+                    alert('✅ PIN set successfully!');
+                } else {
+                    alert('❌ PINs do not match!');
+                }
+            } else if (pin) {
+                alert('❌ PIN must be 4 digits!');
+            }
+        }
+
+        // Toggle Fingerprint
+        function toggleFingerprint() {
+            const enabled = document.getElementById('fingerprintToggle').checked;
+            if (enabled) {
+                // Check if WebAuthn is supported
+                if ('PublicKeyCredential' in window) {
+                    alert('👆 Fingerprint login enabled. Use your fingerprint to login next time.');
+                } else {
+                    alert('❌ Fingerprint not supported on this device.');
+                    document.getElementById('fingerprintToggle').checked = false;
+                }
+            }
+        }
+
+        // Toggle Face ID
+        function toggleFaceID() {
+            const enabled = document.getElementById('faceIDToggle').checked;
+            if (enabled) {
+                // Check if WebAuthn is supported
+                if ('PublicKeyCredential' in window) {
+                    alert('📸 Face ID enabled. Use your face to login next time.');
+                } else {
+                    alert('❌ Face ID not supported on this device.');
+                    document.getElementById('faceIDToggle').checked = false;
+                }
+            }
+        }
+
+        // Set Auto Logout
+        function setAutoLogout() {
+            const minutes = parseInt(document.getElementById('autoLogoutTime').value);
+            if (minutes > 0) {
+                alert(`⏱️ Auto logout set to ${minutes} minutes of inactivity.`);
+            } else {
+                alert('⏱️ Auto logout disabled.');
+            }
+        }
+
+        // Set Session Timeout
+        function setSessionTimeout() {
+            const minutes = parseInt(document.getElementById('sessionTimeout').value);
+            if (minutes > 0) {
+                alert(`⏰ Session timeout set to ${minutes} minutes.`);
+            } else {
+                alert('⏰ Session timeout disabled.');
+            }
+        }
+
+        // Toggle Device Authentication
+        function toggleDeviceAuth() {
+            const enabled = document.getElementById('deviceAuthToggle').checked;
+            if (enabled) {
+                // Get device ID
+                let deviceId = localStorage.getItem('deviceId');
+                if (!deviceId) {
+                    deviceId = 'device-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+                    localStorage.setItem('deviceId', deviceId);
+                }
+                alert('📱 Device authentication enabled. Only this device can access your account.\n\nDevice ID: ' + deviceId);
+            } else {
+                alert('📱 Device authentication disabled.');
+            }
+        }
+
+        // Save Security Settings
+        function saveSecuritySettings() {
+            const settings = {
+                fingerprint: document.getElementById('fingerprintToggle').checked,
+                faceID: document.getElementById('faceIDToggle').checked,
+                autoLogout: document.getElementById('autoLogoutTime').value,
+                sessionTimeout: document.getElementById('sessionTimeout').value,
+                deviceAuth: document.getElementById('deviceAuthToggle').checked
+            };
+            localStorage.setItem('securitySettings', JSON.stringify(settings));
+            alert('✅ Security settings saved successfully!');
+        }
+    </script>
+</body>
+</html>

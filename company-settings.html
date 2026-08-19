@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Stock - Company Settings</title>
+    
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+   <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" href="images/icon-192.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#667eea">
+    <script src="/sw-register.js"></script>
+    <script src="offline-sync.js"></script>
+    
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyAwcI_RRe3nRS8ZLxExsyyT4PDdtv5g4kg",
+            authDomain: "smart-stock-app-da50f.firebaseapp.com",
+            projectId: "smart-stock-app-da50f",
+            storageBucket: "smart-stock-app-da50f.appspot.com",
+            messagingSenderId: "512981075308",
+            appId: "1:512981075308:web:491c04288f19aa26775f49",
+            measurementId: "G-QPCK6Q566V"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        console.log("🔥 Firebase connected!");
+
+        async function getCompany(companyId) {
+            try {
+                const doc = await db.collection('companies').doc(companyId).get();
+                if (doc.exists) {
+                    return { id: doc.id, ...doc.data() };
+                }
+                return null;
+            } catch (error) {
+                console.error("❌ Error:", error);
+                return null;
+            }
+        }
+
+        async function saveCompanySettings(companyId, data) {
+            try {
+                await db.collection('companies').doc(companyId).set(data, { merge: true });
+                console.log("✅ Company settings saved!");
+                return true;
+            } catch (error) {
+                console.error("❌ Error:", error);
+                return false;
+            }
+        }
+    </script>
+</head>
+<body>
+    <div class="form-container" style="max-width:100%;padding:10px;">
+        <div class="form-box" style="max-width:100%;padding:15px;">
+            <div class="form-header">
+                <a href="dashboard.html" class="back-btn">← Back</a>
+                <h1>🏢 Company Settings</h1>
+                <p>Set up your company branding</p>
+            </div>
+
+            <form id="companyForm">
+                <div class="form-group">
+                    <label>Company Name</label>
+                    <input type="text" id="companyName" placeholder="Enter company name" style="width:100%;padding:10px;border:2px solid #e0e0e0;border-radius:8px;font-family:'Poppins',sans-serif;">
+                </div>
+
+                <div class="form-group">
+                    <label>Company Logo</label>
+                    <input type="file" id="companyLogoUpload" accept="image/*" style="width:100%;padding:8px;border:2px solid #e0e0e0;border-radius:8px;font-family:'Poppins',sans-serif;">
+                    <div id="companyLogoPreview" style="margin-top:8px;display:none;">
+                        <img id="companyLogoPreviewImg" src="#" alt="Company logo" style="max-width:120px;max-height:120px;border-radius:8px;border:2px solid #e0e0e0;padding:4px;">
+                        <button type="button" onclick="clearCompanyLogo()" style="margin-top:5px;padding:4px 12px;background:#ef4444;color:white;border:none;border-radius:6px;cursor:pointer;font-family:'Poppins',sans-serif;font-size:0.8rem;">✕ Remove</button>
+                    </div>
+                    <p style="font-size:0.7rem;color:#888;margin-top:3px;">Upload your company logo (PNG, JPG)</p>
+                </div>
+
+                <div class="form-group">
+                    <label>Primary Color</label>
+                    <input type="color" id="primaryColor" value="#667eea" style="width:100%;padding:10px;border:2px solid #e0e0e0;border-radius:8px;font-family:'Poppins',sans-serif;">
+                </div>
+
+                <div class="form-group">
+                    <label>Company Address</label>
+                    <input type="text" id="companyAddress" placeholder="Enter company address" style="width:100%;padding:10px;border:2px solid #e0e0e0;border-radius:8px;font-family:'Poppins',sans-serif;">
+                </div>
+
+                <div class="form-group">
+                    <label>Company Phone</label>
+                    <input type="text" id="companyPhone" placeholder="Enter company phone" style="width:100%;padding:10px;border:2px solid #e0e0e0;border-radius:8px;font-family:'Poppins',sans-serif;">
+                </div>
+
+                <button type="submit" style="width:100%;padding:12px;background:#667eea;color:white;border:none;border-radius:10px;font-weight:600;cursor:pointer;font-family:'Poppins',sans-serif;">💾 Save Company Settings</button>
+            </form>
+
+            <div id="companyPreview" style="margin-top:15px;padding:20px;border:2px solid #e0e0e0;border-radius:12px;text-align:center;">
+                <h3>Preview</h3>
+                <div id="previewContent" style="padding:15px;border-radius:10px;">
+                    <span id="previewLogo" style="font-size:2rem;">📦</span>
+                    <h2 id="previewName" style="margin:5px 0;">SmartStock</h2>
+                    <p id="previewAddress" style="color:#888;font-size:0.8rem;">Address</p>
+                    <p id="previewPhone" style="color:#888;font-size:0.8rem;">Phone</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============================================
+        // COMPANY SETTINGS
+        // ============================================
+        let companyId = 'default';
+        let companyLogoData = '';
+
+        document.addEventListener('DOMContentLoaded', async function() {
+            const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+            if (!currentUser) {
+                window.location.href = 'index.html';
+                return;
+            }
+
+            // Get company ID from user
+            const userDoc = await db.collection('users')
+                .where('email', '==', currentUser.email)
+                .get();
+            
+            userDoc.forEach(doc => {
+                const data = doc.data();
+                companyId = data.companyId || 'default';
+            });
+
+            // Load company data
+            const company = await getCompany(companyId);
+            if (company) {
+                loadCompanyData(company);
+            }
+
+            // ===== LOGO UPLOAD =====
+            document.getElementById('companyLogoUpload').addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(event) {
+                        companyLogoData = event.target.result;
+                        document.getElementById('companyLogoPreviewImg').src = companyLogoData;
+                        document.getElementById('companyLogoPreview').style.display = 'block';
+                        document.getElementById('previewLogo').innerHTML = `<img src="${companyLogoData}" style="max-width:60px;max-height:60px;border-radius:50%;">`;
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+
+            window.clearCompanyLogo = function() {
+                companyLogoData = '';
+                document.getElementById('companyLogoUpload').value = '';
+                document.getElementById('companyLogoPreview').style.display = 'none';
+                document.getElementById('companyLogoPreviewImg').src = '#';
+                document.getElementById('previewLogo').textContent = '🏢';
+            };
+
+            // ===== PREVIEW ON INPUT =====
+            ['companyName', 'primaryColor', 'companyAddress', 'companyPhone'].forEach(id => {
+                document.getElementById(id).addEventListener('input', function() {
+                    updatePreview({
+                        name: document.getElementById('companyName').value || 'SmartStock',
+                        logo: document.getElementById('previewLogo').textContent || '📦',
+                        primaryColor: document.getElementById('primaryColor').value || '#667eea',
+                        address: document.getElementById('companyAddress').value || '',
+                        phone: document.getElementById('companyPhone').value || ''
+                    });
+                });
+            });
+
+            // ===== SAVE =====
+            document.getElementById('companyForm').addEventListener('submit', async function(e) {
+                e.preventDefault();
+
+                const companyData = {
+                    name: document.getElementById('companyName').value || 'SmartStock',
+                    primaryColor: document.getElementById('primaryColor').value || '#667eea',
+                    address: document.getElementById('companyAddress').value || '',
+                    phone: document.getElementById('companyPhone').value || '',
+                    updatedDate: new Date().toISOString()
+                };
+
+                // Use uploaded logo if available
+                if (companyLogoData) {
+                    companyData.logo = companyLogoData;
+                } else {
+                    // Keep existing logo
+                    const existingCompany = await getCompany(companyId);
+                    companyData.logo = existingCompany?.logo || '🏢';
+                }
+
+                const saved = await saveCompanySettings(companyId, companyData);
+                if (saved) {
+                    alert('✅ Company settings saved successfully!');
+                    location.reload();
+                } else {
+                    alert('❌ Error saving company settings');
+                }
+            });
+        });
+
+        // ============================================
+        // LOAD COMPANY DATA
+        // ============================================
+        function loadCompanyData(company) {
+            document.getElementById('companyName').value = company.name || '';
+            
+            // Check if logo is an image or emoji
+            if (company.logo && company.logo.startsWith('data:image')) {
+                companyLogoData = company.logo;
+                document.getElementById('companyLogoPreview').style.display = 'block';
+                document.getElementById('companyLogoPreviewImg').src = company.logo;
+                document.getElementById('previewLogo').innerHTML = `<img src="${company.logo}" style="max-width:60px;max-height:60px;border-radius:50%;">`;
+            } else {
+                document.getElementById('previewLogo').textContent = company.logo || '🏢';
+            }
+            
+            document.getElementById('primaryColor').value = company.primaryColor || '#667eea';
+            document.getElementById('companyAddress').value = company.address || '';
+            document.getElementById('companyPhone').value = company.phone || '';
+            
+            updatePreview(company);
+        }
+
+        function updatePreview(data) {
+            document.getElementById('previewName').textContent = data.name || 'SmartStock';
+            document.getElementById('previewAddress').textContent = data.address || 'Address';
+            document.getElementById('previewPhone').textContent = data.phone || 'Phone';
+            document.getElementById('previewContent').style.backgroundColor = data.primaryColor + '20';
+            document.getElementById('previewContent').style.borderTop = `4px solid ${data.primaryColor}`;
+        }
+    </script>
+</body>
+</html>

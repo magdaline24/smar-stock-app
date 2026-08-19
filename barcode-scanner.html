@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Smart Stock - Barcode Scanner</title>
+    
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" href="images/icon-192.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#667eea">
+    <script src="/sw-register.js"></script>
+    <script src="offline-sync.js"></script>
+    
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyAwcI_RRe3nRS8ZLxExsyyT4PDdtv5g4kg",
+            authDomain: "smart-stock-app-da50f.firebaseapp.com",
+            projectId: "smart-stock-app-da50f",
+            storageBucket: "smart-stock-app-da50f.appspot.com",
+            messagingSenderId: "512981075308",
+            appId: "1:512981075308:web:491c04288f19aa26775f49",
+            measurementId: "G-QPCK6Q566V"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        console.log("🔥 Firebase connected!");
+
+        async function getProducts() {
+            try {
+                const snapshot = await db.collection('products').get();
+                const products = [];
+                snapshot.forEach(doc => {
+                    products.push({ id: doc.id, ...doc.data() });
+                });
+                return products;
+            } catch (error) {
+                console.error("❌ Error:", error);
+                return [];
+            }
+        }
+
+        async function updateProduct(productId, data) {
+            try {
+                await db.collection('products').doc(productId).update(data);
+                console.log("✅ Product updated:", productId);
+                return true;
+            } catch (error) {
+                console.error("❌ Error updating product:", error);
+                return false;
+            }
+        }
+    </script>
+</head>
+<body>
+    <div class="form-container" style="max-width:100%;padding:10px;">
+        <div class="form-box" style="max-width:100%;padding:15px;">
+            <div class="form-header">
+                <a href="inventory.html" class="back-btn">← Back</a>
+                <h1>📸 Barcode Scanner</h1>
+                <p>Scan or enter barcode manually</p>
+            </div>
+
+            <!-- ===== Manual Entry ===== -->
+            <div style="margin:15px 0;background:#f8f9ff;padding:15px;border-radius:12px;border:2px solid #e0e0e0;">
+                <p style="font-weight:600;margin-bottom:8px;">🔍 Enter Barcode Manually</p>
+                <div style="display:flex;gap:8px;">
+                    <input type="text" id="manualBarcode" placeholder="Type barcode number" style="flex:1;padding:10px;border:2px solid #e0e0e0;border-radius:8px;font-family:'Poppins',sans-serif;font-size:16px;">
+                    <button id="searchBarcodeBtn" style="padding:10px 20px;background:#667eea;color:white;border:none;border-radius:8px;cursor:pointer;font-family:'Poppins',sans-serif;white-space:nowrap;">🔍 Search</button>
+                </div>
+                <p style="font-size:0.8rem;color:#888;margin-top:5px;">📱 Or use the camera below</p>
+            </div>
+
+            <!-- ===== TIP ===== -->
+            <div style="background:#fff3cd;border:1px solid #ffc107;border-radius:8px;padding:10px;margin:10px 0;">
+                <p style="margin:0;font-size:0.85rem;color:#856404;">
+                    📱 <strong>Tip:</strong> Camera works best after deploying the app online with HTTPS.
+                    For now, use the manual barcode entry above.
+                </p>
+            </div>
+
+            <!-- ===== Camera Section ===== -->
+            <div style="text-align:center;margin:10px 0;">
+                <div id="cameraContainer" style="width:100%;max-width:400px;height:250px;background:#1a1a2e;border-radius:12px;margin:0 auto;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;">
+                    <video id="video" style="width:100%;height:100%;object-fit:cover;display:none;"></video>
+                    <div id="cameraPlaceholder" style="color:white;text-align:center;padding:20px;">
+                        <span style="font-size:3rem;">📷</span>
+                        <p style="margin-top:10px;">Camera requires HTTPS</p>
+                        <p style="font-size:0.8rem;color:#888;">Please use manual entry below</p>
+                        <p style="font-size:0.7rem;color:#666;margin-top:5px;">After deployment, camera will work automatically</p>
+                    </div>
+                </div>
+                <div style="margin-top:10px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+                    <button id="startCameraBtn" style="display:none;padding:10px 30px;background:#667eea;color:white;border:none;border-radius:10px;font-weight:600;cursor:pointer;font-family:'Poppins',sans-serif;">📷 Start Camera</button>
+                    <button id="stopCameraBtn" style="display:none;padding:10px 30px;background:#ef4444;color:white;border:none;border-radius:10px;font-weight:600;cursor:pointer;font-family:'Poppins',sans-serif;">⏹ Stop</button>
+                </div>
+            </div>
+
+            <!-- ===== Scan Result ===== -->
+            <div id="scanResult" style="display:none;background:#f8f9ff;border-radius:12px;padding:15px;margin-top:15px;border:2px solid #22c55e;">
+                <h3 style="margin:0 0 10px;color:#22c55e;">✅ Product Found</h3>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:0.9rem;">
+                    <div><strong>Name:</strong> <span id="resultName">-</span></div>
+                    <div><strong>Category:</strong> <span id="resultCategory">-</span></div>
+                    <div><strong>Quantity:</strong> <span id="resultQty">-</span></div>
+                    <div><strong>Price:</strong> <span id="resultPrice">-</span></div>
+                    <div><strong>Supplier:</strong> <span id="resultSupplier">-</span></div>
+                    <div><strong>Expiry:</strong> <span id="resultExpiry">-</span></div>
+                </div>
+                <div style="margin-top:10px;display:flex;gap:10px;flex-wrap:wrap;">
+                    <input type="number" id="updateQty" placeholder="New quantity" style="flex:1;padding:8px;border:2px solid #e0e0e0;border-radius:8px;font-family:'Poppins',sans-serif;min-width:80px;">
+                    <button id="updateQtyBtn" style="padding:8px 20px;background:#22c55e;color:white;border:none;border-radius:8px;cursor:pointer;font-family:'Poppins',sans-serif;">💾 Update</button>
+                </div>
+            </div>
+
+            <div id="scanNotFound" style="display:none;text-align:center;padding:20px;color:#ef4444;">
+                <span style="font-size:3rem;">🔍</span>
+                <p>Product not found. Please check the barcode.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============================================
+        // SEARCH PRODUCT
+        // ============================================
+        let currentProduct = null;
+
+        async function searchProductByBarcode(barcode) {
+            const products = await getProducts();
+            const product = products.find(p => p.barcode === barcode || p.name.toLowerCase() === barcode.toLowerCase());
+            
+            if (product) {
+                currentProduct = product;
+                document.getElementById('scanResult').style.display = 'block';
+                document.getElementById('scanNotFound').style.display = 'none';
+                
+                document.getElementById('resultName').textContent = product.name || 'N/A';
+                document.getElementById('resultCategory').textContent = product.category || 'N/A';
+                document.getElementById('resultQty').textContent = product.quantity || 0;
+                document.getElementById('resultPrice').textContent = product.price ? `KES ${product.price}` : 'N/A';
+                document.getElementById('resultSupplier').textContent = product.supplier || 'N/A';
+                document.getElementById('resultExpiry').textContent = product.expiryDate ? new Date(product.expiryDate).toLocaleDateString() : 'N/A';
+                document.getElementById('updateQty').value = product.quantity || 0;
+            } else {
+                document.getElementById('scanResult').style.display = 'none';
+                document.getElementById('scanNotFound').style.display = 'block';
+                currentProduct = null;
+            }
+        }
+
+        // ===== Manual Search =====
+        document.getElementById('searchBarcodeBtn').addEventListener('click', function() {
+            const barcode = document.getElementById('manualBarcode').value.trim();
+            if (barcode) {
+                searchProductByBarcode(barcode);
+            } else {
+                alert('Please enter a barcode number');
+            }
+        });
+
+        document.getElementById('manualBarcode').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                document.getElementById('searchBarcodeBtn').click();
+            }
+        });
+
+        // ===== Update Quantity =====
+        document.getElementById('updateQtyBtn').addEventListener('click', async function() {
+            if (!currentProduct) {
+                alert('No product selected');
+                return;
+            }
+            const newQty = parseInt(document.getElementById('updateQty').value);
+            if (isNaN(newQty) || newQty < 0) {
+                alert('Please enter a valid quantity');
+                return;
+            }
+            const success = await updateProduct(currentProduct.id, { quantity: newQty });
+            if (success) {
+                alert(`✅ Quantity updated to ${newQty} for ${currentProduct.name}`);
+                document.getElementById('resultQty').textContent = newQty;
+                currentProduct.quantity = newQty;
+            } else {
+                alert('❌ Error updating quantity');
+            }
+        });
+
+        console.log("✅ Barcode scanner loaded!");
+    </script>
+</body>
+</html>

@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Stock - Notifications</title>
+    
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- PWA Support -->
+    <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" href="images/icon-192.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#667eea">
+    <script src="/sw-register.js"></script>
+    <script src="offline-sync.js"></script>
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyAwcI_RRe3nRS8ZLxExsyyT4PDdtv5g4kg",
+            authDomain: "smart-stock-app-da50f.firebaseapp.com",
+            projectId: "smart-stock-app-da50f",
+            storageBucket: "smart-stock-app-da50f.appspot.com",
+            messagingSenderId: "512981075308",
+            appId: "1:512981075308:web:491c04288f19aa26775f49",
+            measurementId: "G-QPCK6Q566V"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        console.log("🔥 Firebase connected!");
+
+        async function getProducts() {
+            try {
+                const snapshot = await db.collection('products').get();
+                const products = [];
+                snapshot.forEach(doc => {
+                    products.push({ id: doc.id, ...doc.data() });
+                });
+                return products;
+            } catch (error) {
+                console.error("❌ Error:", error);
+                return [];
+            }
+        }
+
+        async function getStockCounts() {
+            try {
+                const snapshot = await db.collection('stockCounts')
+                    .orderBy('date', 'desc')
+                    .limit(20)
+                    .get();
+                const counts = [];
+                snapshot.forEach(doc => {
+                    counts.push({ id: doc.id, ...doc.data() });
+                });
+                return counts;
+            } catch (error) {
+                console.error("❌ Error:", error);
+                return [];
+            }
+        }
+
+        async function getNotifications() {
+            try {
+                const snapshot = await db.collection('notifications')
+                    .orderBy('date', 'desc')
+                    .limit(50)
+                    .get();
+                const notifications = [];
+                snapshot.forEach(doc => {
+                    notifications.push({ id: doc.id, ...doc.data() });
+                });
+                return notifications;
+            } catch (error) {
+                console.error("❌ Error:", error);
+                return [];
+            }
+        }
+    </script>
+</head>
+<body>
+    <div class="form-container" style="max-width: 100%; padding: 10px;">
+        <div class="form-box" style="max-width: 100%; padding: 15px;">
+            <div class="form-header">
+                <a href="dashboard.html" class="back-btn">← Back</a>
+                <h1>🔔 Notifications</h1>
+                <p>Real-time alerts and updates</p>
+            </div>
+
+            <!-- Notification Types -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 8px; margin-bottom: 15px;">
+                <button onclick="filterNotifications('all')" style="padding: 8px; background: #667eea; color: white; border: none; border-radius: 8px; cursor: pointer; font-family: 'Poppins', sans-serif; font-size: 0.7rem;">📋 All</button>
+                <button onclick="filterNotifications('low')" style="padding: 8px; background: #ef4444; color: white; border: none; border-radius: 8px; cursor: pointer; font-family: 'Poppins', sans-serif; font-size: 0.7rem;">🔴 Low Stock</button>
+                <button onclick="filterNotifications('expiry')" style="padding: 8px; background: #f59e0b; color: white; border: none; border-radius: 8px; cursor: pointer; font-family: 'Poppins', sans-serif; font-size: 0.7rem;">🟡 Expiry</button>
+                <button onclick="filterNotifications('pending')" style="padding: 8px; background: #3b82f6; color: white; border: none; border-radius: 8px; cursor: pointer; font-family: 'Poppins', sans-serif; font-size: 0.7rem;">🔵 Pending</button>
+                <button onclick="filterNotifications('delivery')" style="padding: 8px; background: #22c55e; color: white; border: none; border-radius: 8px; cursor: pointer; font-family: 'Poppins', sans-serif; font-size: 0.7rem;">🟢 Delivery</button>
+                <button onclick="filterNotifications('system')" style="padding: 8px; background: #764ba2; color: white; border: none; border-radius: 8px; cursor: pointer; font-family: 'Poppins', sans-serif; font-size: 0.7rem;">🟣 System</button>
+            </div>
+
+            <!-- Notification List -->
+            <div id="notificationList" style="max-height: 500px; overflow-y: auto;">
+                <!-- Notifications will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .notif-item {
+            background: white;
+            border-radius: 10px;
+            padding: 12px 15px;
+            margin-bottom: 8px;
+            border-left: 4px solid #667eea;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+            transition: all 0.2s ease;
+        }
+        .notif-item:hover {
+            transform: translateX(5px);
+        }
+        .notif-item .notif-content {
+            flex: 1;
+        }
+        .notif-item .notif-content strong {
+            display: block;
+            font-size: 0.9rem;
+        }
+        .notif-item .notif-content p {
+            margin: 2px 0 0;
+            font-size: 0.8rem;
+            color: #666;
+        }
+        .notif-item .notif-time {
+            font-size: 0.65rem;
+            color: #999;
+            white-space: nowrap;
+            margin-left: 10px;
+        }
+        .notif-item .notif-badge {
+            font-size: 0.6rem;
+            padding: 2px 8px;
+            border-radius: 20px;
+            font-weight: 600;
+        }
+        .notif-item .notif-badge.low { background: #fee2e2; color: #ef4444; }
+        .notif-item .notif-badge.expiry { background: #fffbeb; color: #f59e0b; }
+        .notif-item .notif-badge.pending { background: #eff6ff; color: #3b82f6; }
+        .notif-item .notif-badge.delivery { background: #dcfce7; color: #22c55e; }
+        .notif-item .notif-badge.system { background: #f3e8ff; color: #764ba2; }
+        .notif-item.low { border-left-color: #ef4444; }
+        .notif-item.expiry { border-left-color: #f59e0b; }
+        .notif-item.pending { border-left-color: #3b82f6; }
+        .notif-item.delivery { border-left-color: #22c55e; }
+        .notif-item.system { border-left-color: #764ba2; }
+    </style>
+
+    <script>
+        let allNotifications = [];
+
+        async function loadNotifications() {
+            const products = await getProducts();
+            const counts = await getStockCounts();
+            const existingNotifs = await getNotifications();
+            
+            const notifs = [];
+
+            // 1. Low Stock Alerts
+            const lowStock = products.filter(p => (p.quantity || 0) < 10);
+            lowStock.forEach(p => {
+                notifs.push({
+                    id: `low-${p.id}`,
+                    type: 'low',
+                    title: `⚠️ Low Stock: ${p.name}`,
+                    message: `Only ${p.quantity || 0} units remaining. Please reorder.`,
+                    date: new Date().toISOString(),
+                    read: false
+                });
+            });
+
+            // 2. Expiry Alerts
+            const today = new Date();
+            const sevenDays = new Date();
+            sevenDays.setDate(today.getDate() + 7);
+            const expiring = products.filter(p => {
+                if (!p.expiryDate) return false;
+                const expiry = new Date(p.expiryDate);
+                return expiry >= today && expiry <= sevenDays;
+            });
+            expiring.forEach(p => {
+                notifs.push({
+                    id: `expiry-${p.id}`,
+                    type: 'expiry',
+                    title: `🟡 Expiring Soon: ${p.name}`,
+                    message: `Expires on ${new Date(p.expiryDate).toLocaleDateString()}`,
+                    date: new Date().toISOString(),
+                    read: false
+                });
+            });
+
+            // 3. Pending Approvals
+            const pending = await db.collection('stockIssuing')
+                .where('status', '==', 'Pending')
+                .get();
+            pending.forEach(doc => {
+                const data = doc.data();
+                notifs.push({
+                    id: `pending-${doc.id}`,
+                    type: 'pending',
+                    title: `🔵 Pending Approval: ${data.product || 'Item'}`,
+                    message: `${data.quantity || 0} units requested by ${data.department || 'Unknown'}`,
+                    date: data.date || new Date().toISOString(),
+                    read: false
+                });
+            });
+
+            // 4. New Deliveries
+            const deliveries = await db.collection('stockReceiving')
+                .orderBy('date', 'desc')
+                .limit(5)
+                .get();
+            deliveries.forEach(doc => {
+                const data = doc.data();
+                notifs.push({
+                    id: `delivery-${doc.id}`,
+                    type: 'delivery',
+                    title: `🟢 New Delivery: ${data.product || 'Item'}`,
+                    message: `${data.quantity || 0} units received from ${data.supplier || 'Unknown'}`,
+                    date: data.date || new Date().toISOString(),
+                    read: false
+                });
+            });
+
+            // Sort by date (newest first)
+            notifs.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+            allNotifications = notifs;
+            renderNotifications('all');
+        }
+
+        function renderNotifications(type) {
+            const container = document.getElementById('notificationList');
+            let filtered = allNotifications;
+
+            if (type !== 'all') {
+                filtered = filtered.filter(n => n.type === type);
+            }
+
+            if (filtered.length === 0) {
+                container.innerHTML = '<div style="text-align:center;padding:40px;color:#999;"><span style="font-size:3rem;">✅</span><p>No notifications</p></div>';
+            } else {
+                container.innerHTML = filtered.map(n => `
+                    <div class="notif-item ${n.type}">
+                        <div class="notif-content">
+                            <strong>${n.title}</strong>
+                            <p>${n.message}</p>
+                        </div>
+                        <span class="notif-time">${new Date(n.date).toLocaleDateString()}</span>
+                        <span class="notif-badge ${n.type}">${n.type.toUpperCase()}</span>
+                    </div>
+                `).join('');
+            }
+        }
+
+        function filterNotifications(type) {
+            renderNotifications(type);
+        }
+
+        document.addEventListener('DOMContentLoaded', loadNotifications);
+    </script>
+</body>
+</html>
