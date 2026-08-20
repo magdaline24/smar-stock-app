@@ -1,7 +1,7 @@
 {
-  "name": "SmartStock Inventory",
+  "name": "SmartStock",
   "short_name": "SmartStock",
-  "description": "Smart Inventory Management System",
+  "description": "Inventory Management System",
   "start_url": "index.html",
   "display": "standalone",
   "orientation": "portrait",
