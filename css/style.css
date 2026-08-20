@@ -1674,3 +1674,26 @@ form h2 {
         text-align: center;
     }
 }
+/* ===== MOBILE SIDEBAR ===== */
+@media (max-width: 768px) {
+    .sidebar {
+        position: fixed !important;
+        left: -280px !important;
+        top: 0 !important;
+        width: 280px !important;
+        height: 100vh !important;
+        z-index: 1000 !important;
+        transition: left 0.3s ease !important;
+        overflow-y: auto !important;
+        background: linear-gradient(180deg, #667eea 0%, #764ba2 100%) !important;
+    }
+    
+    .sidebar.mobile-open {
+        left: 0 !important;
+        box-shadow: 0 0 30px rgba(0,0,0,0.5) !important;
+    }
+    
+    .mobile-menu-btn {
+        display: block !important;
+    }
+}
