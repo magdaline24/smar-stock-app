@@ -1790,3 +1790,61 @@ form h2 {
         grid-template-columns: 1fr !important;
     }
 }
+/* ===== FORCE SIDEBAR VISIBLE ===== */
+.sidebar {
+    display: flex !important;
+}
+
+.sidebar-nav .nav-item {
+    display: flex !important;
+}
+
+.mobile-menu-btn {
+    display: block !important;
+    background: none;
+    border: none;
+    font-size: 1.8rem;
+    cursor: pointer;
+    padding: 5px 10px;
+    color: #333;
+    font-family: 'Poppins', sans-serif;
+}
+
+/* Mobile styles */
+@media (max-width: 768px) {
+    .sidebar {
+        position: fixed !important;
+        left: -280px !important;
+        top: 0 !important;
+        width: 280px !important;
+        height: 100vh !important;
+        z-index: 1000 !important;
+        transition: left 0.3s ease !important;
+        overflow-y: auto !important;
+        background: linear-gradient(180deg, #667eea 0%, #764ba2 100%) !important;
+        display: flex !important;
+    }
+    
+    .sidebar.mobile-open {
+        left: 0 !important;
+    }
+    
+    .mobile-menu-btn {
+        display: block !important;
+    }
+    
+    .sidebar-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.5);
+        z-index: 999;
+    }
+    
+    .sidebar-overlay.active {
+        display: block !important;
+    }
+}
