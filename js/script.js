@@ -32,24 +32,24 @@ function getCurrentUserRole() {
     return 'Admin';
 }
 
-function applyRoleBasedAccess() {
-    const role = getCurrentUserRole();
-    const permissions = rolePermissions[role] || rolePermissions['Storekeeper'];
-    const allowedMenus = permissions.menu;
+//function applyRoleBasedAccess() {
+   // const role = getCurrentUserRole();
+   // const permissions = rolePermissions[role] || rolePermissions['Storekeeper'];
+   // const allowedMenus = permissions.menu;
     
-    console.log(`👤 Current Role: ${role}`);
-    console.log(`📋 Allowed Menus:`, allowedMenus);
+  //  console.log(`👤 Current Role: ${role}`);
+   // console.log(`📋 Allowed Menus:`, allowedMenus);
     
-    const menuItems = document.querySelectorAll('.sidebar-nav .nav-item');
-    menuItems.forEach(item => {
-        const href = item.getAttribute('href');
-        if (!href) return;
+  //  const menuItems = document.querySelectorAll('.sidebar-nav .nav-item');
+   // menuItems.forEach(item => {
+    //    const href = item.getAttribute('href');
+      //  if (!href) return;
         
-        let pageName = href.replace('.html', '').replace('./', '');
-        if (pageName === 'dashboard') {
-            item.style.display = 'flex';
-            return;
-        }
+      //  let pageName = href.replace('.html', '').replace('./', '');
+       // if (pageName === 'dashboard') {
+        //    item.style.display = 'flex';
+          //  return;
+     //   }
         
         const user = JSON.parse(localStorage.getItem('currentUser'));
         if (!user) {
@@ -320,7 +320,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // ============================================
     
     if (document.querySelector('.dashboard-container')) {
-        applyRoleBasedAccess();
+       // applyRoleBasedAccess();
     }
 
     // ============================================
