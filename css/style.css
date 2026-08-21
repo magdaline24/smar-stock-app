@@ -1848,3 +1848,155 @@ form h2 {
         display: block !important;
     }
 }
+/* ============================================ */
+/* FINAL SIDEBAR FIX */
+/* ============================================ */
+
+.sidebar {
+    display: flex !important;
+    flex-direction: column !important;
+    position: sticky !important;
+    top: 0 !important;
+    height: 100vh !important;
+    width: 240px !important;
+    background: linear-gradient(180deg, #667eea 0%, #764ba2 100%) !important;
+    color: white !important;
+    padding: 20px 0 !important;
+    flex-shrink: 0 !important;
+    z-index: 100 !important;
+    overflow-y: auto !important;
+}
+
+.sidebar-header {
+    text-align: center !important;
+    padding: 0 20px 20px !important;
+    border-bottom: 1px solid rgba(255,255,255,0.1) !important;
+}
+
+.sidebar-header h2 {
+    font-size: 1.3rem !important;
+    color: white !important;
+    margin: 0 !important;
+}
+
+.sidebar-header p {
+    font-size: 0.75rem !important;
+    opacity: 0.7 !important;
+    color: white !important;
+    margin: 0 !important;
+}
+
+.sidebar-nav {
+    flex: 1 !important;
+    padding: 15px 12px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 3px !important;
+    overflow-y: auto !important;
+}
+
+.sidebar-nav .nav-item {
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+    padding: 10px 16px !important;
+    color: rgba(255,255,255,0.7) !important;
+    text-decoration: none !important;
+    border-radius: 10px !important;
+    transition: all 0.3s ease !important;
+    font-size: 0.9rem !important;
+    font-weight: 500 !important;
+}
+
+.sidebar-nav .nav-item:hover {
+    background: rgba(255,255,255,0.1) !important;
+    color: white !important;
+}
+
+.sidebar-nav .nav-item.active {
+    background: rgba(255,255,255,0.2) !important;
+    color: white !important;
+}
+
+.sidebar-nav .nav-item span:first-child {
+    font-size: 1.1rem !important;
+}
+
+.sidebar-footer {
+    padding: 15px 12px !important;
+    border-top: 1px solid rgba(255,255,255,0.1) !important;
+}
+
+.sidebar-footer .nav-item {
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+    padding: 10px 16px !important;
+    color: rgba(255,255,255,0.7) !important;
+    text-decoration: none !important;
+    border-radius: 10px !important;
+    transition: all 0.3s ease !important;
+    font-size: 0.9rem !important;
+    font-weight: 500 !important;
+}
+
+.sidebar-footer .nav-item:hover {
+    background: rgba(255,255,255,0.1) !important;
+    color: white !important;
+}
+
+.sidebar-footer .nav-item span:first-child {
+    font-size: 1.1rem !important;
+}
+
+/* ===== HAMBURGER MENU ===== */
+.mobile-menu-btn {
+    display: none !important;
+    background: none !important;
+    border: none !important;
+    font-size: 1.8rem !important;
+    cursor: pointer !important;
+    padding: 5px 10px !important;
+    color: #333 !important;
+    font-family: 'Poppins', sans-serif !important;
+    z-index: 1001 !important;
+}
+
+/* ===== MOBILE VIEW ===== */
+@media (max-width: 768px) {
+    .mobile-menu-btn {
+        display: block !important;
+    }
+    
+    .sidebar {
+        position: fixed !important;
+        left: -280px !important;
+        top: 0 !important;
+        width: 280px !important;
+        height: 100vh !important;
+        z-index: 1000 !important;
+        transition: left 0.3s ease !important;
+        overflow-y: auto !important;
+        display: flex !important;
+        box-shadow: 2px 0 20px rgba(0,0,0,0.3) !important;
+    }
+    
+    .sidebar.mobile-open {
+        left: 0 !important;
+    }
+    
+    .sidebar-overlay {
+        display: none !important;
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
+        background: rgba(0,0,0,0.5) !important;
+        z-index: 999 !important;
+    }
+    
+    .sidebar-overlay.active {
+        display: block !important;
+    }
+}
