@@ -682,5 +682,27 @@
             }, 500);
         });
     </script>
+    <script>
+// ============================================
+// FORCE SIDEBAR VISIBLE
+// ============================================
+document.addEventListener('DOMContentLoaded', function() {
+    // Show all sidebar items
+    const menuItems = document.querySelectorAll('.sidebar-nav .nav-item');
+    menuItems.forEach(item => {
+        item.style.display = 'flex';
+    });
+    
+    // Show sidebar
+    const sidebar = document.querySelector('.sidebar');
+    if (sidebar) {
+        sidebar.style.display = 'flex';
+        sidebar.style.position = 'sticky';
+        sidebar.style.left = '0';
+    }
+    
+    console.log("✅ Sidebar forced visible!");
+});
+</script>
 </body>
 </html>
