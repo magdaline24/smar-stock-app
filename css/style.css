@@ -1,4 +1,6 @@
-/* ===== RESET & BASE ===== */
+/* ============================================ */
+/* RESET & BASE */
+/* ============================================ */
 * {
     margin: 0;
     padding: 0;
@@ -15,7 +17,9 @@ body {
     padding: 20px;
 }
 
-/* ===== LOGIN CONTAINER ===== */
+/* ============================================ */
+/* LOGIN */
+/* ============================================ */
 .login-container {
     width: 100%;
     max-width: 450px;
@@ -29,7 +33,6 @@ body {
     animation: fadeIn 0.5s ease-in;
 }
 
-/* ===== LOGIN HEADER ===== */
 .login-header {
     text-align: center;
     margin-bottom: 35px;
@@ -47,7 +50,9 @@ body {
     margin-top: 5px;
 }
 
-/* ===== FORM STYLES ===== */
+/* ============================================ */
+/* FORMS */
+/* ============================================ */
 form h2 {
     font-size: 1.5rem;
     color: #333;
@@ -60,7 +65,6 @@ form h2 {
     margin-bottom: 25px;
 }
 
-/* ===== INPUT GROUPS ===== */
 .input-group {
     margin-bottom: 20px;
 }
@@ -92,7 +96,6 @@ form h2 {
     box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
-/* ===== LOGIN OPTIONS ===== */
 .login-options {
     display: flex;
     justify-content: space-between;
@@ -124,7 +127,6 @@ form h2 {
     text-decoration: underline;
 }
 
-/* ===== BUTTONS ===== */
 .btn-login-submit {
     width: 100%;
     padding: 14px;
@@ -144,11 +146,6 @@ form h2 {
     box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
 }
 
-.btn-login-submit:active {
-    transform: translateY(0);
-}
-
-/* ===== SIGNUP LINK ===== */
 .signup-link {
     text-align: center;
     margin-top: 20px;
@@ -166,42 +163,23 @@ form h2 {
     text-decoration: underline;
 }
 
-/* ===== ANIMATIONS ===== */
 @keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(20px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
-/* ===== RESPONSIVE ===== */
-@media (max-width: 500px) {
-    .login-box {
-        padding: 30px 20px;
-    }
-    
-    .login-header h1 {
-        font-size: 1.5rem;
-    }
-    
-    .login-options {
-        flex-direction: column;
-        gap: 10px;
-        align-items: flex-start;
-    }
-}
-/* ===== PASSWORD RESET ===== */
+/* ============================================ */
+/* PASSWORD RESET */
+/* ============================================ */
 #forgotForm,
 #verifyForm,
 #newPasswordForm {
     animation: fadeIn 0.3s ease-in;
 }
 
-/* ===== PROFILE PAGE ===== */
+/* ============================================ */
+/* PROFILE */
+/* ============================================ */
 .profile-container {
     width: 100%;
     max-width: 700px;
@@ -243,14 +221,12 @@ form h2 {
     text-decoration: underline;
 }
 
-/* ===== PROFILE CARD ===== */
 .profile-card {
     background: #f8f9ff;
     border-radius: 15px;
     padding: 30px;
 }
 
-/* Profile Photo */
 .profile-photo {
     text-align: center;
     margin-bottom: 25px;
@@ -286,7 +262,6 @@ form h2 {
     text-decoration: underline;
 }
 
-/* Profile Info Grid */
 .profile-info {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -317,7 +292,6 @@ form h2 {
     font-weight: 500;
 }
 
-/* Profile Actions */
 .profile-actions {
     display: flex;
     gap: 15px;
@@ -359,25 +333,6 @@ form h2 {
     box-shadow: 0 6px 20px rgba(118, 75, 162, 0.4);
 }
 
-/* ===== RESPONSIVE FOR PROFILE ===== */
-@media (max-width: 600px) {
-    .profile-box {
-        padding: 20px;
-    }
-    
-    .profile-info {
-        grid-template-columns: 1fr;
-    }
-    
-    .profile-actions {
-        flex-direction: column;
-    }
-    
-    .btn-action {
-        width: 100%;
-    }
-}
-/* ===== EDIT MODE ===== */
 .edit-input {
     width: 100%;
     padding: 10px 12px;
@@ -404,8 +359,9 @@ form h2 {
     color: #333;
     font-weight: 600;
 }
+
 /* ============================================ */
-/* ===== DASHBOARD STYLES ===== */
+/* ===== DASHBOARD ===== */
 /* ============================================ */
 
 .dashboard-container {
@@ -414,10 +370,7 @@ form h2 {
     background: #f0f2f5;
 }
 
-/* ============================================ */
-/* SIDEBAR (Left Menu) */
-/* ============================================ */
-
+/* ===== SIDEBAR ===== */
 .sidebar {
     width: 240px;
     background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
@@ -429,6 +382,8 @@ form h2 {
     top: 0;
     height: 100vh;
     flex-shrink: 0;
+    overflow-y: auto;
+    z-index: 100;
 }
 
 .sidebar-header {
@@ -440,11 +395,13 @@ form h2 {
 .sidebar-header h2 {
     font-size: 1.3rem;
     margin-bottom: 3px;
+    color: white;
 }
 
 .sidebar-header p {
     font-size: 0.75rem;
     opacity: 0.7;
+    color: white;
 }
 
 .sidebar-nav {
@@ -488,10 +445,53 @@ form h2 {
     border-top: 1px solid rgba(255,255,255,0.1);
 }
 
-/* ============================================ */
-/* TOP NAVIGATION BAR */
-/* ============================================ */
+.sidebar-footer .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 16px;
+    color: rgba(255,255,255,0.7);
+    text-decoration: none;
+    border-radius: 10px;
+    transition: all 0.3s ease;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
 
+.sidebar-footer .nav-item:hover {
+    background: rgba(255,255,255,0.1);
+    color: white;
+}
+
+/* ===== MOBILE HAMBURGER MENU ===== */
+.mobile-menu-btn {
+    display: none;
+    background: none;
+    border: none;
+    font-size: 1.8rem;
+    cursor: pointer;
+    padding: 5px 10px;
+    color: #333;
+    font-family: 'Poppins', sans-serif;
+    z-index: 1001;
+}
+
+.sidebar-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.5);
+    z-index: 99;
+}
+
+.sidebar-overlay.active {
+    display: block !important;
+}
+
+/* ===== TOP NAV ===== */
 .top-nav {
     display: flex;
     justify-content: space-between;
@@ -508,7 +508,7 @@ form h2 {
 .nav-left {
     display: flex;
     align-items: center;
-    gap: 25px;
+    gap: 15px;
     flex-wrap: wrap;
 }
 
@@ -610,10 +610,7 @@ form h2 {
     color: #888;
 }
 
-/* ============================================ */
-/* SUMMARY CARDS */
-/* ============================================ */
-
+/* ===== STATS CARDS ===== */
 .stats-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -668,22 +665,11 @@ form h2 {
     font-size: 0.7rem;
 }
 
-.stat-change.positive {
-    color: #22c55e;
-}
+.stat-change.positive { color: #22c55e; }
+.stat-change.negative { color: #ef4444; }
+.stat-change.neutral { color: #3b82f6; }
 
-.stat-change.negative {
-    color: #ef4444;
-}
-
-.stat-change.neutral {
-    color: #3b82f6;
-}
-
-/* ============================================ */
-/* CHARTS SECTION */
-/* ============================================ */
-
+/* ===== CHARTS ===== */
 .charts-section {
     display: grid;
     grid-template-columns: 2fr 1fr;
@@ -707,7 +693,6 @@ form h2 {
     color: #333;
 }
 
-/* Bar Chart */
 .bar-chart-container {
     display: flex;
     align-items: flex-end;
@@ -737,7 +722,6 @@ form h2 {
     color: #888;
 }
 
-/* Pie Chart */
 .pie-chart-container {
     display: flex;
     align-items: center;
@@ -749,13 +733,21 @@ form h2 {
     width: 120px;
     height: 120px;
     border-radius: 50%;
-    background: conic-gradient(
-        #667eea 0% 40%,
-        #764ba2 40% 70%,
-        #f59e0b 70% 85%,
-        #22c55e 85% 100%
-    );
     position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.pie-visual span {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 0.8rem;
+    font-weight: bold;
+    color: white;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
 }
 
 .pie-legend {
@@ -779,10 +771,7 @@ form h2 {
     display: inline-block;
 }
 
-/* ============================================ */
-/* BOTTOM GRID (Transactions + Activities) */
-/* ============================================ */
-
+/* ===== TRANSACTIONS & ACTIVITIES ===== */
 .bottom-grid {
     display: grid;
     grid-template-columns: 2fr 1fr;
@@ -825,7 +814,6 @@ form h2 {
     color: #888;
 }
 
-/* Transaction Table */
 .transaction-table {
     width: 100%;
     border-collapse: collapse;
@@ -873,15 +861,9 @@ form h2 {
     font-size: 0.75rem;
 }
 
-.status.completed {
-    color: #22c55e;
-}
+.status.completed { color: #22c55e; }
+.status.pending { color: #f59e0b; }
 
-.status.pending {
-    color: #f59e0b;
-}
-
-/* Activities List */
 .activity-list {
     display: flex;
     flex-direction: column;
@@ -931,10 +913,7 @@ form h2 {
     margin-top: 2px;
 }
 
-/* ============================================ */
-/* ALERTS SECTION */
-/* ============================================ */
-
+/* ===== ALERTS ===== */
 .alerts-section {
     margin-bottom: 25px;
 }
@@ -1012,10 +991,7 @@ form h2 {
     color: #999;
 }
 
-/* ============================================ */
-/* QUICK ACTIONS */
-/* ============================================ */
-
+/* ===== QUICK ACTIONS ===== */
 .quick-actions {
     display: flex;
     gap: 12px;
@@ -1024,7 +1000,7 @@ form h2 {
 }
 
 .quick-action-btn {
-    display: flex;
+    display: inline-flex;
     align-items: center;
     gap: 8px;
     padding: 10px 20px;
@@ -1037,6 +1013,7 @@ form h2 {
     cursor: pointer;
     transition: all 0.3s ease;
     font-family: 'Poppins', sans-serif;
+    text-decoration: none;
 }
 
 .quick-action-btn:hover {
@@ -1044,6 +1021,7 @@ form h2 {
     background: #f8f9ff;
     transform: translateY(-3px);
     box-shadow: 0 6px 20px rgba(102, 126, 234, 0.15);
+    color: #333;
 }
 
 .quick-action-btn span {
@@ -1051,97 +1029,8 @@ form h2 {
 }
 
 /* ============================================ */
-/* RESPONSIVE DESIGN */
+/* FORM PAGES */
 /* ============================================ */
-
-@media (max-width: 1200px) {
-    .charts-section {
-        grid-template-columns: 1fr;
-    }
-}
-
-@media (max-width: 992px) {
-    .bottom-grid {
-        grid-template-columns: 1fr;
-    }
-}
-
-@media (max-width: 768px) {
-    .dashboard-container {
-        flex-direction: column;
-    }
-    
-    .sidebar {
-        width: 100%;
-        height: auto;
-        position: relative;
-        padding: 10px 0;
-    }
-    
-    .sidebar-nav {
-        flex-direction: row;
-        flex-wrap: wrap;
-        justify-content: center;
-        padding: 10px;
-        gap: 5px;
-    }
-    
-    .nav-item {
-        padding: 6px 14px;
-        font-size: 0.8rem;
-    }
-    
-    .sidebar-footer {
-        display: none;
-    }
-    
-    .top-nav {
-        flex-direction: column;
-        align-items: stretch;
-        padding: 15px;
-    }
-    
-    .nav-left {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 10px;
-    }
-    
-    .search-bar input {
-        width: 100%;
-    }
-    
-    .nav-right {
-        justify-content: space-between;
-    }
-    
-    .stats-grid {
-        grid-template-columns: 1fr 1fr;
-    }
-    
-    .main-content {
-        padding: 15px;
-    }
-}
-
-@media (max-width: 480px) {
-    .stats-grid {
-        grid-template-columns: 1fr;
-    }
-    
-    .quick-actions {
-        flex-direction: column;
-    }
-    
-    .quick-action-btn {
-        width: 100%;
-        justify-content: center;
-    }
-}
-/* ============================================ */
-/* ===== FORM STYLES (For all form pages) ===== */
-/* ============================================ */
-
 .form-container {
     min-height: 100vh;
     display: flex;
@@ -1176,18 +1065,6 @@ form h2 {
 .form-header p {
     color: #888;
     font-size: 0.9rem;
-}
-
-.back-btn {
-    display: inline-block;
-    color: #667eea;
-    text-decoration: none;
-    font-weight: 500;
-    margin-bottom: 10px;
-}
-
-.back-btn:hover {
-    text-decoration: underline;
 }
 
 .form-group {
@@ -1249,87 +1126,11 @@ form h2 {
     box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
 }
 
-@media (max-width: 500px) {
-    .form-box {
-        padding: 25px 20px;
-    }
-    
-    .form-row {
-        grid-template-columns: 1fr;
-    }
-}
-
-/* Quick action buttons as links */
-.quick-action-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 10px 20px;
-    background: white;
-    border: 2px solid #e0e0e0;
-    border-radius: 12px;
-    font-size: 0.85rem;
-    font-weight: 500;
-    color: #555;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    font-family: 'Poppins', sans-serif;
-    text-decoration: none;
-}
-
-.quick-action-btn:hover {
-    border-color: #667eea;
-    background: #f8f9ff;
-    transform: translateY(-3px);
-    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.15);
-    color: #333;
-}
-/* ===== CHART FIXES ===== */
-.pie-visual {
-    width: 120px;
-    height: 120px;
-    border-radius: 50%;
-    position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.pie-visual span {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    font-size: 0.8rem;
-    font-weight: bold;
-    color: white;
-    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
-}
 /* ============================================ */
-/* MOBILE RESPONSIVE - FOR PHONES */
+/* RESPONSIVE - MOBILE */
 /* ============================================ */
 
-/* ===== MOBILE RESPONSIVE - PHONES ===== */
 @media (max-width: 768px) {
-    /* ===== GENERAL ===== */
-    body {
-        overflow-x: hidden;
-    }
-    
-    /* ===== HAMBURGER MENU BUTTON ===== */
-    .mobile-menu-btn {
-        display: block !important;
-        background: none;
-        border: none;
-        font-size: 1.8rem;
-        cursor: pointer;
-        padding: 5px 10px;
-        color: #333;
-        font-family: 'Poppins', sans-serif;
-        z-index: 1001;
-    }
-    
-    /* ===== SIDEBAR - Slide from left ===== */
     .sidebar {
         position: fixed !important;
         left: -280px !important;
@@ -1342,14 +1143,19 @@ form h2 {
         background: linear-gradient(180deg, #667eea 0%, #764ba2 100%) !important;
         box-shadow: 2px 0 20px rgba(0,0,0,0.3) !important;
         padding-top: 20px !important;
+        display: flex !important;
     }
     
     .sidebar.mobile-open {
         left: 0 !important;
     }
     
-    /* ===== OVERLAY ===== */
+    .mobile-menu-btn {
+        display: block !important;
+    }
+    
     .sidebar-overlay {
+        display: none;
         position: fixed;
         top: 0;
         left: 0;
@@ -1357,272 +1163,149 @@ form h2 {
         height: 100%;
         background: rgba(0,0,0,0.5);
         z-index: 999;
-        display: none;
     }
     
     .sidebar-overlay.active {
         display: block !important;
     }
     
-    /* ===== TOP NAV ===== */
+    .dashboard-container {
+        flex-direction: column;
+    }
+    
     .top-nav {
-        padding: 10px !important;
-        display: flex !important;
-        flex-wrap: wrap !important;
-        align-items: center !important;
-        gap: 8px !important;
+        flex-direction: column;
+        align-items: stretch;
+        padding: 15px;
     }
     
     .nav-left {
-        display: flex !important;
-        align-items: center !important;
-        gap: 10px !important;
-        flex: 1 !important;
-    }
-    
-    .nav-left h1 {
-        font-size: 1.1rem !important;
-        margin: 0 !important;
-    }
-    
-    .search-bar {
-        flex: 1 !important;
-        min-width: 80px !important;
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 10px;
     }
     
     .search-bar input {
-        width: 100% !important;
-        padding: 6px 10px !important;
-        font-size: 0.8rem !important;
+        width: 100%;
     }
     
     .nav-right {
-        display: flex !important;
-        align-items: center !important;
-        gap: 8px !important;
+        justify-content: space-between;
     }
     
-    .user-profile {
-        padding: 4px 8px !important;
-    }
-    
-    .user-avatar {
-        width: 30px !important;
-        height: 30px !important;
-        font-size: 0.8rem !important;
-    }
-    
-    .user-info .user-name {
-        font-size: 0.7rem !important;
-    }
-    
-    .user-info .user-role {
-        font-size: 0.6rem !important;
-    }
-    
-    .btn-notification {
-        font-size: 1rem !important;
-        padding: 4px 8px !important;
-    }
-    
-    .notification-badge {
-        font-size: 0.5rem !important;
-        padding: 1px 4px !important;
-    }
-    
-    /* ===== MAIN CONTENT ===== */
-    .main-content {
-        padding: 10px !important;
-        width: 100% !important;
-        margin-left: 0 !important;
-    }
-    
-    /* ===== STATS CARDS ===== */
     .stats-grid {
-        grid-template-columns: 1fr 1fr !important;
-        gap: 10px !important;
+        grid-template-columns: 1fr 1fr;
     }
     
-    .stat-card {
-        padding: 12px !important;
-        gap: 10px !important;
-    }
-    
-    .stat-icon {
-        width: 35px !important;
-        height: 35px !important;
-        font-size: 1.2rem !important;
-    }
-    
-    .stat-info h3 {
-        font-size: 0.6rem !important;
-    }
-    
-    .stat-number {
-        font-size: 1.1rem !important;
-    }
-    
-    .stat-change {
-        font-size: 0.6rem !important;
-    }
-    
-    /* ===== CHARTS ===== */
     .charts-section {
-        grid-template-columns: 1fr !important;
-        gap: 10px !important;
+        grid-template-columns: 1fr;
     }
     
-    .chart-card {
-        padding: 12px !important;
-    }
-    
-    .chart-header h3 {
-        font-size: 0.8rem !important;
-    }
-    
-    .bar {
-        width: 20px !important;
-    }
-    
-    .bar-item span {
-        font-size: 0.6rem !important;
-    }
-    
-    .pie-visual {
-        width: 80px !important;
-        height: 80px !important;
-    }
-    
-    .pie-legend div {
-        font-size: 0.7rem !important;
-    }
-    
-    /* ===== TRANSACTIONS & ACTIVITIES ===== */
     .bottom-grid {
-        grid-template-columns: 1fr !important;
-        gap: 10px !important;
+        grid-template-columns: 1fr;
     }
     
-    .card {
-        padding: 12px !important;
+    .main-content {
+        padding: 15px;
     }
     
-    .card-header h3 {
-        font-size: 0.8rem !important;
-    }
-    
-    .transaction-table {
-        font-size: 0.7rem !important;
-    }
-    
-    .transaction-table th,
-    .transaction-table td {
-        padding: 6px 4px !important;
-    }
-    
-    /* ===== QUICK ACTIONS ===== */
     .quick-actions {
-        flex-direction: row !important;
-        flex-wrap: wrap !important;
-        gap: 8px !important;
+        flex-direction: row;
+        flex-wrap: wrap;
     }
     
     .quick-action-btn {
-        padding: 8px 14px !important;
-        font-size: 0.7rem !important;
-        flex: 1 !important;
-        min-width: 70px !important;
-        justify-content: center !important;
-    }
-    
-    .quick-action-btn span {
-        font-size: 0.9rem !important;
-    }
-    
-    /* ===== ALERTS ===== */
-    .alert-item {
-        padding: 10px !important;
-        gap: 10px !important;
-    }
-    
-    .alert-content p {
-        font-size: 0.75rem !important;
-    }
-    
-    .alert-desc {
-        font-size: 0.65rem !important;
-    }
-    
-    .alert-time {
-        font-size: 0.6rem !important;
-    }
-    
-    /* ===== FORMS ===== */
-    .form-box {
-        padding: 20px !important;
-        margin: 10px !important;
-    }
-    
-    .form-row {
-        grid-template-columns: 1fr !important;
-    }
-    
-    /* ===== LOGIN ===== */
-    .login-box {
-        padding: 25px 20px !important;
-        margin: 10px !important;
-    }
-    
-    .login-header h1 {
-        font-size: 1.5rem !important;
-    }
-    
-    /* ===== PROFILE ===== */
-    .profile-box {
-        padding: 20px !important;
-        margin: 10px !important;
+        flex: 1;
+        min-width: 80px;
+        justify-content: center;
     }
     
     .profile-info {
-        grid-template-columns: 1fr !important;
+        grid-template-columns: 1fr;
     }
     
     .profile-actions {
-        flex-direction: column !important;
+        flex-direction: column;
+    }
+    
+    .btn-action {
+        width: 100%;
+    }
+    
+    .login-box {
+        padding: 30px 20px;
+        margin: 10px;
+    }
+    
+    .login-header h1 {
+        font-size: 1.5rem;
+    }
+    
+    .login-options {
+        flex-direction: column;
+        gap: 10px;
+        align-items: flex-start;
+    }
+    
+    .form-box {
+        padding: 20px;
+        margin: 10px;
+    }
+    
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+    
+    .profile-box {
+        padding: 20px;
+        margin: 10px;
     }
 }
 
-/* ===== EXTRA SMALL PHONES (below 480px) ===== */
 @media (max-width: 480px) {
     .stats-grid {
-        grid-template-columns: 1fr !important;
+        grid-template-columns: 1fr;
     }
     
     .quick-actions {
-        flex-direction: column !important;
+        flex-direction: column;
     }
     
     .quick-action-btn {
-        width: 100% !important;
+        width: 100%;
     }
     
     .nav-left h1 {
-        font-size: 0.9rem !important;
+        font-size: 0.9rem;
     }
     
     .top-nav {
-        padding: 8px !important;
+        padding: 8px;
     }
 }
 
+@media (max-width: 1200px) {
+    .charts-section {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 992px) {
+    .bottom-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ============================================ */
+/* PRINT */
+/* ============================================ */
 @media print {
-    /* Hide navigation */
     .sidebar, .top-nav, .quick-actions, .back-btn, .form-header a, 
     button, .btn, .chart-card, .charts-section, .alerts-section {
         display: none !important;
     }
     
-    /* Show only report content */
     #reportContent {
         display: block !important;
         padding: 20px;
@@ -1630,7 +1313,6 @@ form h2 {
         width: 100%;
     }
     
-    /* Logo styling for print */
     #reportContent .report-header {
         border-bottom: 3px solid #667eea;
         padding-bottom: 15px;
@@ -1650,7 +1332,6 @@ form h2 {
         margin: 0;
     }
     
-    /* Table styling */
     #reportContent table {
         width: 100%;
         border-collapse: collapse;
@@ -1669,7 +1350,6 @@ form h2 {
         border-bottom: 1px solid #eee;
     }
     
-    /* Stats boxes */
     .stat-box {
         display: inline-block;
         padding: 10px 20px;
@@ -1677,326 +1357,5 @@ form h2 {
         background: #f8f9ff;
         border-radius: 8px;
         text-align: center;
-    }
-}
-/* ===== MOBILE SIDEBAR ===== */
-.mobile-menu-btn {
-    display: none;
-    background: none;
-    border: none;
-    font-size: 1.8rem;
-    cursor: pointer;
-    padding: 5px 10px;
-    color: #333;
-    font-family: 'Poppins', sans-serif;
-}
-
-.sidebar-overlay {
-    display: none;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0,0,0,0.5);
-    z-index: 999;
-}
-
-.sidebar-overlay.active {
-    display: block !important;
-}
-
-@media (max-width: 768px) {
-    .mobile-menu-btn {
-        display: block !important;
-    }
-    
-    .sidebar {
-        position: fixed !important;
-        left: -280px !important;
-        top: 0 !important;
-        width: 280px !important;
-        height: 100vh !important;
-        z-index: 1000 !important;
-        transition: left 0.3s ease !important;
-        overflow-y: auto !important;
-        background: linear-gradient(180deg, #667eea 0%, #764ba2 100%) !important;
-        box-shadow: 2px 0 20px rgba(0,0,0,0.3) !important;
-        padding-top: 20px !important;
-    }
-    
-    .sidebar.mobile-open {
-        left: 0 !important;
-    }
-    
-    .top-nav {
-        padding: 10px !important;
-        flex-wrap: wrap !important;
-    }
-    
-    .nav-left {
-        display: flex !important;
-        align-items: center !important;
-        gap: 8px !important;
-        flex: 1 !important;
-    }
-    
-    .nav-left h1 {
-        font-size: 1rem !important;
-    }
-    
-    .search-bar {
-        flex: 1 !important;
-        min-width: 60px !important;
-    }
-    
-    .search-bar input {
-        width: 100% !important;
-        padding: 5px 8px !important;
-        font-size: 0.8rem !important;
-    }
-    
-    .stats-grid {
-        grid-template-columns: 1fr 1fr !important;
-        gap: 8px !important;
-    }
-    
-    .stat-card {
-        padding: 10px !important;
-    }
-    
-    .stat-number {
-        font-size: 1rem !important;
-    }
-    
-    .quick-actions {
-        flex-wrap: wrap !important;
-        gap: 6px !important;
-    }
-    
-    .quick-action-btn {
-        padding: 6px 10px !important;
-        font-size: 0.7rem !important;
-        flex: 1 !important;
-        min-width: 60px !important;
-        justify-content: center !important;
-    }
-    
-    .charts-section {
-        grid-template-columns: 1fr !important;
-    }
-    
-    .bottom-grid {
-        grid-template-columns: 1fr !important;
-    }
-}
-/* ===== FORCE SIDEBAR VISIBLE ===== */
-.sidebar {
-    display: flex !important;
-}
-
-.sidebar-nav .nav-item {
-    display: flex !important;
-}
-
-.mobile-menu-btn {
-    display: block !important;
-    background: none;
-    border: none;
-    font-size: 1.8rem;
-    cursor: pointer;
-    padding: 5px 10px;
-    color: #333;
-    font-family: 'Poppins', sans-serif;
-}
-
-/* Mobile styles */
-@media (max-width: 768px) {
-    .sidebar {
-        position: fixed !important;
-        left: -280px !important;
-        top: 0 !important;
-        width: 280px !important;
-        height: 100vh !important;
-        z-index: 1000 !important;
-        transition: left 0.3s ease !important;
-        overflow-y: auto !important;
-        background: linear-gradient(180deg, #667eea 0%, #764ba2 100%) !important;
-        display: flex !important;
-    }
-    
-    .sidebar.mobile-open {
-        left: 0 !important;
-    }
-    
-    .mobile-menu-btn {
-        display: block !important;
-    }
-    
-    .sidebar-overlay {
-        display: none;
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0,0,0,0.5);
-        z-index: 999;
-    }
-    
-    .sidebar-overlay.active {
-        display: block !important;
-    }
-}
-/* ============================================ */
-/* FINAL SIDEBAR FIX */
-/* ============================================ */
-
-.sidebar {
-    display: flex !important;
-    flex-direction: column !important;
-    position: sticky !important;
-    top: 0 !important;
-    height: 100vh !important;
-    width: 240px !important;
-    background: linear-gradient(180deg, #667eea 0%, #764ba2 100%) !important;
-    color: white !important;
-    padding: 20px 0 !important;
-    flex-shrink: 0 !important;
-    z-index: 100 !important;
-    overflow-y: auto !important;
-}
-
-.sidebar-header {
-    text-align: center !important;
-    padding: 0 20px 20px !important;
-    border-bottom: 1px solid rgba(255,255,255,0.1) !important;
-}
-
-.sidebar-header h2 {
-    font-size: 1.3rem !important;
-    color: white !important;
-    margin: 0 !important;
-}
-
-.sidebar-header p {
-    font-size: 0.75rem !important;
-    opacity: 0.7 !important;
-    color: white !important;
-    margin: 0 !important;
-}
-
-.sidebar-nav {
-    flex: 1 !important;
-    padding: 15px 12px !important;
-    display: flex !important;
-    flex-direction: column !important;
-    gap: 3px !important;
-    overflow-y: auto !important;
-}
-
-.sidebar-nav .nav-item {
-    display: flex !important;
-    align-items: center !important;
-    gap: 12px !important;
-    padding: 10px 16px !important;
-    color: rgba(255,255,255,0.7) !important;
-    text-decoration: none !important;
-    border-radius: 10px !important;
-    transition: all 0.3s ease !important;
-    font-size: 0.9rem !important;
-    font-weight: 500 !important;
-}
-
-.sidebar-nav .nav-item:hover {
-    background: rgba(255,255,255,0.1) !important;
-    color: white !important;
-}
-
-.sidebar-nav .nav-item.active {
-    background: rgba(255,255,255,0.2) !important;
-    color: white !important;
-}
-
-.sidebar-nav .nav-item span:first-child {
-    font-size: 1.1rem !important;
-}
-
-.sidebar-footer {
-    padding: 15px 12px !important;
-    border-top: 1px solid rgba(255,255,255,0.1) !important;
-}
-
-.sidebar-footer .nav-item {
-    display: flex !important;
-    align-items: center !important;
-    gap: 12px !important;
-    padding: 10px 16px !important;
-    color: rgba(255,255,255,0.7) !important;
-    text-decoration: none !important;
-    border-radius: 10px !important;
-    transition: all 0.3s ease !important;
-    font-size: 0.9rem !important;
-    font-weight: 500 !important;
-}
-
-.sidebar-footer .nav-item:hover {
-    background: rgba(255,255,255,0.1) !important;
-    color: white !important;
-}
-
-.sidebar-footer .nav-item span:first-child {
-    font-size: 1.1rem !important;
-}
-
-/* ===== HAMBURGER MENU ===== */
-.mobile-menu-btn {
-    display: none !important;
-    background: none !important;
-    border: none !important;
-    font-size: 1.8rem !important;
-    cursor: pointer !important;
-    padding: 5px 10px !important;
-    color: #333 !important;
-    font-family: 'Poppins', sans-serif !important;
-    z-index: 1001 !important;
-}
-
-/* ===== MOBILE VIEW ===== */
-@media (max-width: 768px) {
-    .mobile-menu-btn {
-        display: block !important;
-    }
-    
-    .sidebar {
-        position: fixed !important;
-        left: -280px !important;
-        top: 0 !important;
-        width: 280px !important;
-        height: 100vh !important;
-        z-index: 1000 !important;
-        transition: left 0.3s ease !important;
-        overflow-y: auto !important;
-        display: flex !important;
-        box-shadow: 2px 0 20px rgba(0,0,0,0.3) !important;
-    }
-    
-    .sidebar.mobile-open {
-        left: 0 !important;
-    }
-    
-    .sidebar-overlay {
-        display: none !important;
-        position: fixed !important;
-        top: 0 !important;
-        left: 0 !important;
-        width: 100% !important;
-        height: 100% !important;
-        background: rgba(0,0,0,0.5) !important;
-        z-index: 999 !important;
-    }
-    
-    .sidebar-overlay.active {
-        display: block !important;
     }
 }
