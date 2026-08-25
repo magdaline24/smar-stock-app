@@ -8,827 +8,427 @@
     <link rel="stylesheet" href="css/style.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
-    <!-- PWA Support -->
     <link rel="manifest" href="/manifest.json">
     <link rel="apple-touch-icon" href="images/icon-192.png">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#667eea">
-    <script src="sw-register.js"></script>
+    <script src="/sw-register.js"></script>
     <script src="/offline-sync.js"></script>
     
-    <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    
     <style>
-    /* FORCE SIDEBAR VISIBLE - OVERRIDE EVERYTHING */
-    .sidebar {
-        display: flex !important;
-        position: sticky !important;
-        left: 0 !important;
-        top: 0 !important;
-        width: 240px !important;
-        height: 100vh !important;
-        background: linear-gradient(180deg, #667eea 0%, #764ba2 100%) !important;
-        color: white !important;
-        padding: 20px 0 !important;
-        flex-direction: column !important;
-        flex-shrink: 0 !important;
-        z-index: 100 !important;
-    }
-    
-    .sidebar-nav .nav-item {
-        display: flex !important;
-        align-items: center !important;
-        gap: 12px !important;
-        padding: 10px 16px !important;
-        color: rgba(255,255,255,0.7) !important;
-        text-decoration: none !important;
-        border-radius: 10px !important;
-        font-size: 0.9rem !important;
-        font-weight: 500 !important;
-    }
-    
-    .sidebar-nav .nav-item.active {
-        background: rgba(255,255,255,0.2) !important;
-        color: white !important;
-    }
-    
-    .mobile-menu-btn {
-        display: block !important;
-    }
-</style>
-    <script>
-        const firebaseConfig = {
-            apiKey: "AIzaSyAwcI_RRe3nRS8ZLxExsyyT4PDdtv5g4kg",
-            authDomain: "smart-stock-app-da50f.firebaseapp.com",
-            projectId: "smart-stock-app-da50f",
-            storageBucket: "smart-stock-app-da50f.appspot.com",
-            messagingSenderId: "512981075308",
-            appId: "1:512981075308:web:491c04288f19aa26775f49",
-            measurementId: "G-QPCK6Q566V"
-        };
-
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
-        console.log("🔥 Firebase connected!");
-
-        // ===== GET PRODUCTS =====
-        async function getProducts() {
-            try {
-                const currentUser = JSON.parse(localStorage.getItem('currentUser'));
-                const companyId = currentUser?.companyId || 'default';
-                const snapshot = await db.collection('products')
-                    .where('companyId', '==', companyId)
-                    .get();
-                const products = [];
-                snapshot.forEach(doc => {
-                    products.push({ id: doc.id, ...doc.data() });
-                });
-                return products;
-            } catch (error) {
-                console.error("❌ Error:", error);
-                return [];
+        /* ===== FORCE SIDEBAR VISIBLE ===== */
+        .sidebar {
+            display: flex !important;
+            position: sticky !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: 240px !important;
+            height: 100vh !important;
+            background: linear-gradient(180deg, #667eea 0%, #764ba2 100%) !important;
+            color: white !important;
+            padding: 20px 0 !important;
+            flex-direction: column !important;
+            flex-shrink: 0 !important;
+            z-index: 100 !important;
+        }
+        
+        .sidebar-nav .nav-item {
+            display: flex !important;
+            align-items: center !important;
+            gap: 12px !important;
+            padding: 10px 16px !important;
+            color: rgba(255,255,255,0.7) !important;
+            text-decoration: none !important;
+            border-radius: 10px !important;
+            font-size: 0.9rem !important;
+            font-weight: 500 !important;
+        }
+        
+        .sidebar-nav .nav-item.active {
+            background: rgba(255,255,255,0.2) !important;
+            color: white !important;
+        }
+        
+        .sidebar-nav .nav-item:hover {
+            background: rgba(255,255,255,0.1) !important;
+            color: white !important;
+        }
+        
+        .sidebar-footer .nav-item {
+            display: flex !important;
+            align-items: center !important;
+            gap: 12px !important;
+            padding: 10px 16px !important;
+            color: rgba(255,255,255,0.7) !important;
+            text-decoration: none !important;
+            border-radius: 10px !important;
+            font-size: 0.9rem !important;
+            font-weight: 500 !important;
+        }
+        
+        .sidebar-footer .nav-item:hover {
+            background: rgba(255,255,255,0.1) !important;
+            color: white !important;
+        }
+        
+        .mobile-menu-btn {
+            display: none !important;
+            background: none !important;
+            border: none !important;
+            font-size: 1.8rem !important;
+            cursor: pointer !important;
+            padding: 5px 10px !important;
+            color: #333 !important;
+            font-family: 'Poppins', sans-serif !important;
+            z-index: 1001 !important;
+        }
+        
+        @media (max-width: 768px) {
+            .mobile-menu-btn {
+                display: block !important;
+            }
+            .sidebar {
+                position: fixed !important;
+                left: -280px !important;
+                top: 0 !important;
+                width: 280px !important;
+                height: 100vh !important;
+                z-index: 1000 !important;
+                transition: left 0.3s ease !important;
+                overflow-y: auto !important;
+                box-shadow: 2px 0 20px rgba(0,0,0,0.3) !important;
+            }
+            .sidebar.open {
+                left: 0 !important;
             }
         }
-
-        async function getPendingRequests() {
-            try {
-                const snapshot = await db.collection('stockIssuing')
-                    .where('status', '==', 'Pending')
-                    .get();
-                const count = snapshot.size;
-                const receivingSnapshot = await db.collection('stockReceiving')
-                    .where('status', '==', 'Pending')
-                    .get();
-                return count + receivingSnapshot.size;
-            } catch (error) {
-                console.error('Error:', error);
-                return 0;
-            }
-        }
-    </script>
+    </style>
 </head>
 <body>
 
-    <!-- ===== CHECK USER LOGIN ===== -->
-    <script>
-        const currentUser = JSON.parse(localStorage.getItem('currentUser'));
-        if (!currentUser) {
-            window.location.href = 'index.html';
-        }
-    </script>
-
-    <div class="dashboard-container">
-        
-        <!-- ===== SIDEBAR ===== -->
-        <aside class="sidebar" id="sidebar">
-            <div class="sidebar-header">
-                <h2>📦 SmartStock</h2>
-                <p>Inventory Management</p>
-            </div>
-            
-            <nav class="sidebar-nav">
-                <a href="dashboard.html" class="nav-item active">
-                    <span>🏠</span> Dashboard
-                </a>
-                <a href="inventory.html" class="nav-item">
-                    <span>📦</span> Inventory
-                </a>
-                <a href="receive-stock.html" class="nav-item">
-                    <span>📥</span> Stock Receiving
-                </a>
-                <a href="issue-stock.html" class="nav-item">
-                    <span>📤</span> Stock Issuing
-                </a>
-                <a href="stock-count.html" class="nav-item">
-                    <span>📋</span> Stock Count
-                </a>
-                <a href="reports-dashboard.html" class="nav-item">
-                    <span>📄</span> Reports
-                </a>
-                <a href="suppliers.html" class="nav-item">
-                    <span>🚚</span> Suppliers
-                </a>
-                <a href="users.html" class="nav-item">
-                    <span>👥</span> Users
-                </a>
-                <a href="notifications.html" class="nav-item">
-                    <span>🔔</span> Notifications
-                </a>
-                <a href="security.html" class="nav-item">
-                    <span>🔐</span> Security
-                </a>
-                <a href="email-settings.html" class="nav-item">
-                    <span>📧</span> Email Settings
-                </a>
-                <a href="company-settings.html" class="nav-item">
-                    <span>🏢</span> Company
-                </a>
-                <a href="settings.html" class="nav-item">
-                    <span>⚙️</span> Settings
-                </a>
-            </nav>
-            
-            <div class="sidebar-footer">
-                <a href="index.html" class="nav-item" id="logoutBtn">
-                    <span>🚪</span> Logout
-                </a>
-            </div>
-        </aside>
-
-        <!-- ===== SIDEBAR OVERLAY ===== -->
-        <div id="sidebarOverlay" class="sidebar-overlay"></div>
-
-        <!-- ===== MAIN CONTENT ===== -->
-        <main class="main-content">
-            
-            <!-- ===== TOP NAV ===== -->
-            <header class="top-nav">
-                <div class="nav-left">
-                    <button onclick="toggleSidebar()" style="background:none;border:none;font-size:28px;cursor:pointer;padding:5px 10px;color:#333;">☰</button>
-                    <button id="menuBtn" class="mobile-menu-btn">☰</button>
-                    <h1>Dashboard</h1>
-                    <div class="search-bar">
-                        <input type="text" placeholder="🔍 Search inventory...">
-                    </div>
-                </div>
-                
-                <div class="nav-right">
-                    <button class="btn-notification" id="notifBtn">
-                        🔔 <span class="notification-badge">0</span>
-                    </button>
-                    
-                    <div class="user-profile" id="userProfileBtn">
-                        <div class="user-avatar" id="dashboardUserAvatar">👤</div>
-                        <div class="user-info">
-                            <span class="user-name" id="dashboardUserName">User</span>
-                            <span class="user-role" id="dashboardUserRole">Storekeeper</span>
-                        </div>
-                    </div>
-                </div>
-            </header>
-
-            <!-- ===== STATS GRID ===== -->
-            <section class="stats-grid" id="statsGrid">
-                <div class="stat-card">
-                    <div class="stat-icon">📦</div>
-                    <div class="stat-info">
-                        <h3>Total Stock Items</h3>
-                        <p class="stat-number" id="totalStock">0</p>
-                        <span class="stat-change positive">↑ 0% this month</span>
-                    </div>
-                </div>
-
-                <div class="stat-card">
-                    <div class="stat-icon">💰</div>
-                    <div class="stat-info">
-                        <h3>Inventory Value</h3>
-                        <p class="stat-number" id="inventoryValue">KES 0</p>
-                        <span class="stat-change positive">↑ 0% this month</span>
-                    </div>
-                </div>
-
-                <div class="stat-card">
-                    <div class="stat-icon">⚠️</div>
-                    <div class="stat-info">
-                        <h3>Low Stock</h3>
-                        <p class="stat-number" id="lowStock" style="color: #f59e0b;">0</p>
-                        <span class="stat-change negative">⚠️ 0 items</span>
-                    </div>
-                </div>
-
-                <div class="stat-card">
-                    <div class="stat-icon">❌</div>
-                    <div class="stat-info">
-                        <h3>Out of Stock</h3>
-                        <p class="stat-number" id="outOfStock" style="color: #ef4444;">0</p>
-                        <span class="stat-change negative">🔴 0 items</span>
-                    </div>
-                </div>
-
-                <div class="stat-card">
-                    <div class="stat-icon">⏰</div>
-                    <div class="stat-info">
-                        <h3>Expiring Soon</h3>
-                        <p class="stat-number" id="expiringSoon" style="color: #f59e0b;">0</p>
-                        <span class="stat-change negative">⚠️ 0 products</span>
-                    </div>
-                </div>
-
-                <div class="stat-card">
-                    <div class="stat-icon">📝</div>
-                    <div class="stat-info">
-                        <h3>Pending Requests</h3>
-                        <p class="stat-number" id="pendingRequests" style="color: #3b82f6;">0</p>
-                        <span class="stat-change neutral">📋 0 requests</span>
-                    </div>
-                </div>
-            </section>
-
-            <!-- ===== CHARTS ===== -->
-            <section class="charts-section">
-                <div class="chart-card bar-chart">
-                    <div class="chart-header">
-                        <h3>📈 Monthly Stock Movement</h3>
-                    </div>
-                    <div class="bar-chart-container">
-                        <div class="bar-item"><div class="bar" style="height:40%;"></div><span>Jan</span></div>
-                        <div class="bar-item"><div class="bar" style="height:65%;"></div><span>Feb</span></div>
-                        <div class="bar-item"><div class="bar" style="height:50%;"></div><span>Mar</span></div>
-                        <div class="bar-item"><div class="bar" style="height:80%;"></div><span>Apr</span></div>
-                        <div class="bar-item"><div class="bar" style="height:55%;"></div><span>May</span></div>
-                        <div class="bar-item"><div class="bar" style="height:90%;"></div><span>Jun</span></div>
-                        <div class="bar-item"><div class="bar" style="height:70%;"></div><span>Jul</span></div>
-                    </div>
-                </div>
-
-                <div class="chart-card pie-chart">
-                    <div class="chart-header">
-                        <h3>📊 Inventory by Category</h3>
-                    </div>
-                    <div class="pie-chart-container">
-                        <div class="pie-visual" id="pieVisual"></div>
-                        <div class="pie-legend" id="pieLegend"></div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- ===== RECENT TRANSACTIONS ===== -->
-            <section class="bottom-grid">
-                <div class="card recent-transactions">
-                    <div class="card-header">
-                        <h3>🔄 Recent Transactions</h3>
-                        <a href="#" class="view-all">View All →</a>
-                    </div>
-                    <table class="transaction-table">
-                        <thead>
-                            <tr><th>Date</th><th>Item</th><th>Action</th><th>User</th><th>Status</th></tr>
-                        </thead>
-                        <tbody id="transactionBody">
-                            <tr><td colspan="5" style="text-align:center;padding:30px;color:#999;">Loading transactions...</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-
-                <div class="card today-activities">
-                    <div class="card-header">
-                        <h3>📅 Today's Activities</h3>
-                        <span class="activity-count" id="activityCount">0 activities</span>
-                    </div>
-                    <div class="activity-list" id="activityList">
-                        <div style="text-align:center;padding:20px;color:#999;">Loading activities...</div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- ===== ALERTS ===== -->
-            <section class="alerts-section">
-                <div class="card alerts-card">
-                    <div class="card-header">
-                        <h3>🔔 Alerts</h3>
-                        <span class="alert-count" id="alertCount">0 alerts</span>
-                    </div>
-                    <div class="alerts-list" id="alertsList">
-                        <div style="text-align:center;padding:20px;color:#999;">Loading alerts...</div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- ===== QUICK ACTIONS ===== -->
-            <section class="quick-actions">
-                <a href="add-item.html" class="quick-action-btn"><span>➕</span> Add Item</a>
-                <a href="receive-stock.html" class="quick-action-btn"><span>📥</span> Receive Stock</a>
-                <a href="issue-stock.html" class="quick-action-btn"><span>📤</span> Issue Stock</a>
-                <a href="stock-count.html" class="quick-action-btn"><span>📋</span> Start Stock Count</a>
-                <a href="reports-dashboard.html" class="quick-action-btn"><span>📄</span> Generate Report</a>
-                <a href="notifications.html" class="quick-action-btn"><span>🔔</span> Notifications</a>
-                <a href="security.html" class="quick-action-btn"><span>🔐</span> Security</a>
-            </section>
-
-        </main>
+<!-- ===== SIDEBAR ===== -->
+<aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+        <h2>📦 SmartStock</h2>
+        <p>Inventory Management</p>
     </div>
-
-    <script>
-        // ============================================
-        // MOBILE MENU
-        // ============================================
-        document.addEventListener('DOMContentLoaded', function() {
-            const menuBtn = document.getElementById('menuBtn');
-            const sidebar = document.getElementById('sidebar');
-            const overlay = document.getElementById('sidebarOverlay');
-
-            if (menuBtn && sidebar && overlay) {
-                // Toggle sidebar on menu button click
-                menuBtn.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    sidebar.classList.toggle('mobile-open');
-                    overlay.classList.toggle('active');
-                });
-
-                // Close sidebar when overlay is clicked
-                overlay.addEventListener('click', function() {
-                    sidebar.classList.remove('mobile-open');
-                    overlay.classList.remove('active');
-                });
-
-                // Close sidebar on window resize (if going to desktop view)
-                window.addEventListener('resize', function() {
-                    if (window.innerWidth > 768) {
-                        sidebar.classList.remove('mobile-open');
-                        overlay.classList.remove('active');
-                    }
-                });
-            }
-
-            // ============================================
-            // LOAD USER PROFILE
-            // ============================================
-            const currentUser = JSON.parse(localStorage.getItem('currentUser'));
-            const savedProfile = JSON.parse(localStorage.getItem('profileData'));
-            
-            const nameEl = document.getElementById('dashboardUserName');
-            const roleEl = document.getElementById('dashboardUserRole');
-            const avatarEl = document.getElementById('dashboardUserAvatar');
-            
-            const name = savedProfile?.name || currentUser?.name || 'User';
-            const role = savedProfile?.role || currentUser?.role || 'Storekeeper';
-            
-            if (nameEl) nameEl.textContent = name;
-            if (roleEl) roleEl.textContent = role;
-            
-            if (avatarEl && savedProfile?.profilePicture) {
-                avatarEl.innerHTML = '<img src="' + savedProfile.profilePicture + '" style="width:40px;height:40px;border-radius:50%;object-fit:cover;">';
-            }
-
-            // ============================================
-            // PROFILE BUTTON
-            // ============================================
-            document.getElementById('userProfileBtn')?.addEventListener('click', function() {
-                window.location.href = 'profile.html';
-            });
-
-            // ============================================
-            // LOGOUT
-            // ============================================
-            document.getElementById('logoutBtn')?.addEventListener('click', function(e) {
-                e.preventDefault();
-                if (confirm('🚪 Are you sure you want to logout?')) {
-                    localStorage.removeItem('currentUser');
-                    localStorage.removeItem('profileData');
-                    window.location.href = 'index.html';
-                }
-            });
-
-            // ============================================
-            // UPDATE DASHBOARD STATS
-            // ============================================
-            async function updateDashboardStats() {
-                try {
-                    const products = await getProducts();
-                    
-                    const totalItems = products.reduce((sum, p) => sum + (p.quantity || 0), 0);
-                    document.getElementById('totalStock').textContent = totalItems.toLocaleString();
-                    
-                    const totalValue = products.reduce((sum, p) => sum + ((p.price || 0) * (p.quantity || 0)), 0);
-                    const currency = JSON.parse(localStorage.getItem('settings'))?.currency || 'KES';
-                    const symbol = currency === 'USD' ? '$' : currency === 'EUR' ? '€' : currency === 'GBP' ? '£' : 'KES';
-                    document.getElementById('inventoryValue').textContent = `${symbol} ${totalValue.toLocaleString()}`;
-                    
-                    const low = products.filter(p => (p.quantity || 0) < 10);
-                    document.getElementById('lowStock').textContent = low.length;
-                    
-                    const out = products.filter(p => (p.quantity || 0) === 0);
-                    document.getElementById('outOfStock').textContent = out.length;
-                    
-                    const today = new Date();
-                    const thirtyDays = new Date();
-                    thirtyDays.setDate(today.getDate() + 30);
-                    const expiring = products.filter(p => {
-                        if (!p.expiryDate) return false;
-                        const expiry = new Date(p.expiryDate);
-                        return expiry >= today && expiry <= thirtyDays;
-                    });
-                    document.getElementById('expiringSoon').textContent = expiring.length;
-                    
-                    const pending = await getPendingRequests();
-                    document.getElementById('pendingRequests').textContent = pending;
-                    
-                    console.log("✅ Stats updated");
-                } catch (error) {
-                    console.error("❌ Error:", error);
-                }
-            }
-
-            // ============================================
-            // UPDATE PIE CHART
-            // ============================================
-            async function updatePieChart() {
-                try {
-                    const products = await getProducts();
-                    const categories = {};
-                    products.forEach(p => {
-                        const cat = p.category || 'Uncategorized';
-                        categories[cat] = (categories[cat] || 0) + 1;
-                    });
-                    
-                    const colors = {
-                        'Food': '#667eea',
-                        'Medicine': '#764ba2',
-                        'Stationery': '#f59e0b',
-                        'Cleaning': '#22c55e',
-                        'Electronics': '#ef4444',
-                        'Furniture': '#3b82f6',
-                        'Uncategorized': '#888'
-                    };
-                    
-                    const total = Object.values(categories).reduce((a, b) => a + b, 0);
-                    const pieVisual = document.getElementById('pieVisual');
-                    const pieLegend = document.getElementById('pieLegend');
-                    
-                    if (pieVisual) {
-                        if (total === 0) {
-                            pieVisual.style.background = '#e0e0e0';
-                            pieVisual.innerHTML = '<span style="font-size:0.8rem;color:#888;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);">No Data</span>';
-                        } else {
-                            let gradient = '';
-                            let startAngle = 0;
-                            Object.entries(categories).forEach(([cat, count]) => {
-                                const percentage = (count / total) * 100;
-                                const color = colors[cat] || '#888';
-                                gradient += `${color} ${startAngle}% ${startAngle + percentage}%, `;
-                                startAngle += percentage;
-                            });
-                            gradient = gradient.slice(0, -2);
-                            pieVisual.style.background = `conic-gradient(${gradient})`;
-                            pieVisual.innerHTML = `<span style="font-size:0.7rem;color:white;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-weight:bold;">${total}</span>`;
-                        }
-                    }
-                    
-                    if (pieLegend) {
-                        if (total === 0) {
-                            pieLegend.innerHTML = '<div style="color:#888;font-size:0.8rem;">Add items to see chart</div>';
-                        } else {
-                            pieLegend.innerHTML = Object.entries(categories).map(([cat, count]) => {
-                                const percentage = ((count / total) * 100).toFixed(1);
-                                const color = colors[cat] || '#888';
-                                return `<div><span style="background:${color};"></span> ${cat} ${percentage}%</div>`;
-                            }).join('');
-                        }
-                    }
-                } catch (error) {
-                    console.error("❌ Error:", error);
-                }
-            }
-
-            // ============================================
-            // UPDATE TRANSACTIONS
-            // ============================================
-            async function updateTransactions() {
-                try {
-                    const tbody = document.getElementById('transactionBody');
-                    if (!tbody) return;
-                    
-                    const receivingSnap = await db.collection('stockReceiving')
-                        .orderBy('date', 'desc')
-                        .limit(5)
-                        .get();
-                    
-                    const issuingSnap = await db.collection('stockIssuing')
-                        .orderBy('date', 'desc')
-                        .limit(5)
-                        .get();
-                    
-                    const transactions = [];
-                    receivingSnap.forEach(doc => {
-                        const data = doc.data();
-                        transactions.push({
-                            date: data.date || new Date().toISOString(),
-                            item: data.item || 'Item',
-                            action: 'Received',
-                            badge: 'badge-in',
-                            user: data.receivedBy || 'System',
-                            status: data.status || 'Completed'
-                        });
-                    });
-                    
-                    issuingSnap.forEach(doc => {
-                        const data = doc.data();
-                        transactions.push({
-                            date: data.date || new Date().toISOString(),
-                            item: data.item || 'Item',
-                            action: 'Issued',
-                            badge: 'badge-out',
-                            user: data.issuedBy || 'System',
-                            status: data.status || 'Pending'
-                        });
-                    });
-                    
-                    transactions.sort((a, b) => new Date(b.date) - new Date(a.date));
-                    const recent = transactions.slice(0, 5);
-                    
-                    if (recent.length === 0) {
-                        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:30px;color:#999;">No transactions yet</td></tr>`;
-                    } else {
-                        tbody.innerHTML = recent.map(t => `
-                            <tr>
-                                <td>${new Date(t.date).toLocaleDateString()}</td>
-                                <td>${t.item}</td>
-                                <td><span class="badge ${t.badge}">${t.action}</span></td>
-                                <td>${t.user}</td>
-                                <td><span class="status ${t.status === 'Pending' ? 'pending' : 'completed'}">${t.status}</span></td>
-                            </tr>
-                        `).join('');
-                    }
-                } catch (error) {
-                    console.error("❌ Error:", error);
-                }
-            }
-
-            // ============================================
-            // UPDATE ACTIVITIES
-            // ============================================
-            async function updateActivities() {
-                try {
-                    const activityList = document.getElementById('activityList');
-                    const activityCount = document.getElementById('activityCount');
-                    if (!activityList) return;
-                    
-                    const today = new Date();
-                    today.setHours(0, 0, 0, 0);
-                    
-                    const activities = [];
-                    
-                    const receiving = await db.collection('stockReceiving')
-                        .where('date', '>=', today.toISOString())
-                        .get();
-                    receiving.forEach(doc => {
-                        const data = doc.data();
-                        activities.push({
-                            text: `📥 ${data.item || 'Item'} received by ${data.receivedBy || 'System'}`,
-                            time: new Date(data.date).toLocaleTimeString()
-                        });
-                    });
-                    
-                    const issuing = await db.collection('stockIssuing')
-                        .where('date', '>=', today.toISOString())
-                        .get();
-                    issuing.forEach(doc => {
-                        const data = doc.data();
-                        activities.push({
-                            text: `📤 ${data.item || 'Item'} issued to ${data.issuedTo || 'Someone'}`,
-                            time: new Date(data.date).toLocaleTimeString()
-                        });
-                    });
-                    
-                    activities.sort((a, b) => {
-                        if (a.time > b.time) return -1;
-                        if (a.time < b.time) return 1;
-                        return 0;
-                    });
-                    
-                    if (activityCount) {
-                        activityCount.textContent = `${activities.length} activities`;
-                    }
-                    
-                    if (activities.length === 0) {
-                        activityList.innerHTML = '<div style="text-align:center;padding:20px;color:#999;">No activities today</div>';
-                    } else {
-                        activityList.innerHTML = activities.slice(0, 5).map(activity => `
-                            <div class="activity-item">
-                                <span class="activity-icon">✅</span>
-                                <div class="activity-detail">
-                                    <p><strong>${activity.text}</strong></p>
-                                    <p class="activity-time">${activity.time}</p>
-                                </div>
-                            </div>
-                        `).join('');
-                    }
-                } catch (error) {
-                    console.error('Error:', error);
-                }
-            }
-
-            // ============================================
-            // UPDATE ALERTS
-            // ============================================
-            async function updateAlerts() {
-                try {
-                    const products = await getProducts();
-                    const alerts = [];
-                    
-                    const lowStock = products.filter(p => (p.quantity || 0) < 10);
-                    lowStock.forEach(p => {
-                        alerts.push({
-                            type: 'danger',
-                            icon: '🔴',
-                            title: `${p.name || 'Item'} almost finished!`,
-                            desc: `Only ${p.quantity || 0} units left. Please reorder.`
-                        });
-                    });
-                    
-                    const today = new Date();
-                    const sevenDays = new Date();
-                    sevenDays.setDate(today.getDate() + 7);
-                    const expiring = products.filter(p => {
-                        if (!p.expiryDate) return false;
-                        const expiry = new Date(p.expiryDate);
-                        return expiry >= today && expiry <= sevenDays;
-                    });
-                    expiring.forEach(p => {
-                        alerts.push({
-                            type: 'warning',
-                            icon: '🟡',
-                            title: `${p.name || 'Product'} expiring soon!`,
-                            desc: `Expires in ${Math.ceil((new Date(p.expiryDate) - today) / (1000 * 60 * 60 * 24))} days.`
-                        });
-                    });
-                    
-                    const alertList = document.getElementById('alertsList');
-                    const alertCount = document.getElementById('alertCount');
-                    
-                    if (alerts.length === 0) {
-                        alertList.innerHTML = '<div style="text-align:center;padding:20px;color:#999;">✅ No alerts</div>';
-                        alertCount.textContent = '0 alerts';
-                    } else {
-                        alertList.innerHTML = alerts.slice(0, 5).map(a => `
-                            <div class="alert-item alert-${a.type}">
-                                <span class="alert-icon">${a.icon}</span>
-                                <div class="alert-content">
-                                    <p><strong>${a.title}</strong></p>
-                                    <p class="alert-desc">${a.desc}</p>
-                                </div>
-                                <span class="alert-time">Just now</span>
-                            </div>
-                        `).join('');
-                        alertCount.textContent = `${alerts.length} alerts`;
-                    }
-                } catch (error) {
-                    console.error('Error:', error);
-                }
-            }
-
-            // ============================================
-            // LOAD ALL ON PAGE LOAD
-            // ============================================
-            setTimeout(async function() {
-                await updateDashboardStats();
-                await updatePieChart();
-                await updateTransactions();
-                await updateAlerts();
-                await updateActivities();
-                console.log("✅ Dashboard fully loaded!");
-            }, 500);
-        });
-    </script>
-    <script>
-
-</script>
-</script>
-<!-- ============================================ -->
-<!-- MOBILE MENU TOGGLE -->
-<!-- ============================================ -->
-<script>
-    // Mobile Menu Toggle
-    function initMobileMenu() {
-        const menuBtn = document.getElementById('mobileMenuBtn');
-        const sidebar = document.querySelector('.sidebar');
-        
-        if (!menuBtn || !sidebar) return;
-        
-        // Show menu button on mobile
-        if (window.innerWidth <= 768) {
-            menuBtn.style.display = 'block';
-        } else {
-            menuBtn.style.display = 'none';
-        }
-        
-        // Create overlay
-        let overlay = document.querySelector('.sidebar-overlay');
-        if (!overlay) {
-            overlay = document.createElement('div');
-            overlay.className = 'sidebar-overlay';
-            overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:999;display:none;';
-            document.body.appendChild(overlay);
-        }
-        
-        // Toggle menu
-        menuBtn.addEventListener('click', function(e) {
-            e.stopPropagation();
-            sidebar.classList.toggle('mobile-open');
-            overlay.classList.toggle('active');
-            if (overlay.classList.contains('active')) {
-                overlay.style.display = 'block';
-            } else {
-                overlay.style.display = 'none';
-            }
-        });
-        
-        // Close menu when clicking overlay
-        overlay.addEventListener('click', function() {
-            sidebar.classList.remove('mobile-open');
-            overlay.classList.remove('active');
-            overlay.style.display = 'none';
-        });
-        
-        // Close menu on window resize
-        window.addEventListener('resize', function() {
-            if (window.innerWidth > 768) {
-                sidebar.classList.remove('mobile-open');
-                overlay.classList.remove('active');
-                overlay.style.display = 'none';
-                menuBtn.style.display = 'none';
-            } else {
-                menuBtn.style.display = 'block';
-            }
-        });
-    }
     
-    // Run when page loads
-    document.addEventListener('DOMContentLoaded', initMobileMenu);
-    <script>
-    // ============================================
-    // FORCE SIDEBAR VISIBLE - OVERRIDE EVERYTHING
-    // ============================================
-    document.addEventListener('DOMContentLoaded', function() {
-        // Get ALL sidebar items
-        var menuItems = document.querySelectorAll('.sidebar-nav .nav-item');
-        menuItems.forEach(function(item) {
-            // Remove ALL inline styles
-            item.style.display = '';
-            item.style.cssText = '';
-            // Force flex display
-            item.style.display = 'flex';
-        });
+    <nav class="sidebar-nav">
+        <a href="dashboard.html" class="nav-item active">
+            <span>🏠</span> Dashboard
+        </a>
+        <a href="inventory.html" class="nav-item">
+            <span>📦</span> Inventory
+        </a>
+        <a href="receive-stock.html" class="nav-item">
+            <span>📥</span> Stock Receiving
+        </a>
+        <a href="issue-stock.html" class="nav-item">
+            <span>📤</span> Stock Issuing
+        </a>
+        <a href="stock-count.html" class="nav-item">
+            <span>📋</span> Stock Count
+        </a>
+        <a href="reports-dashboard.html" class="nav-item">
+            <span>📄</span> Reports
+        </a>
+        <a href="suppliers.html" class="nav-item">
+            <span>🚚</span> Suppliers
+        </a>
+        <a href="users.html" class="nav-item">
+            <span>👥</span> Users
+        </a>
+        <a href="notifications.html" class="nav-item">
+            <span>🔔</span> Notifications
+        </a>
+        <a href="security.html" class="nav-item">
+            <span>🔐</span> Security
+        </a>
+        <a href="email-settings.html" class="nav-item">
+            <span>📧</span> Email Settings
+        </a>
+        <a href="company-settings.html" class="nav-item">
+            <span>🏢</span> Company
+        </a>
+        <a href="settings.html" class="nav-item">
+            <span>⚙️</span> Settings
+        </a>
+    </nav>
+    
+    <div class="sidebar-footer">
+        <a href="index.html" class="nav-item" id="logoutBtn">
+            <span>🚪</span> Logout
+        </a>
+    </div>
+</aside>
+
+<!-- ===== OVERLAY ===== -->
+<div id="sidebarOverlay" class="sidebar-overlay" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:999;"></div>
+
+<!-- ===== MAIN CONTENT ===== -->
+<main class="main-content" style="flex:1;padding:20px;background:#f0f2f5;">
+
+    <!-- ===== TOP NAV ===== -->
+    <header class="top-nav" style="display:flex;justify-content:space-between;align-items:center;background:white;padding:15px 25px;border-radius:15px;margin-bottom:25px;box-shadow:0 2px 10px rgba(0,0,0,0.05);flex-wrap:wrap;gap:15px;">
+        <div class="nav-left" style="display:flex;align-items:center;gap:15px;flex-wrap:wrap;">
+            <button id="menuBtn" class="mobile-menu-btn" style="background:none;border:none;font-size:28px;cursor:pointer;padding:5px 10px;color:#333;">☰</button>
+            <h1 style="font-size:1.4rem;color:#333;font-weight:600;margin:0;">Dashboard</h1>
+            <div class="search-bar" style="flex:1;">
+                <input type="text" placeholder="🔍 Search inventory..." style="padding:8px 16px;border:2px solid #e0e0e0;border-radius:25px;font-size:0.9rem;width:250px;font-family:'Poppins',sans-serif;">
+            </div>
+        </div>
         
-        // Force sidebar visible
-        var sidebar = document.querySelector('.sidebar');
+        <div class="nav-right" style="display:flex;align-items:center;gap:20px;">
+            <button class="btn-notification" id="notifBtn" style="position:relative;background:none;border:none;font-size:1.4rem;cursor:pointer;padding:8px;border-radius:50%;">
+                🔔 <span class="notification-badge" style="position:absolute;top:-2px;right:-2px;background:#ef4444;color:white;font-size:0.6rem;padding:2px 6px;border-radius:50%;font-weight:600;">0</span>
+            </button>
+            
+            <div class="user-profile" id="userProfileBtn" style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:5px 12px 5px 5px;border-radius:25px;">
+                <div class="user-avatar" id="dashboardUserAvatar" style="width:40px;height:40px;background:linear-gradient(135deg,#667eea,#764ba2);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.2rem;color:white;">👤</div>
+                <div class="user-info">
+                    <span class="user-name" id="dashboardUserName" style="font-size:0.85rem;font-weight:600;color:#333;">User</span>
+                    <span class="user-role" id="dashboardUserRole" style="font-size:0.7rem;color:#888;">Storekeeper</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- ===== STATS ===== -->
+    <section class="stats-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:20px;margin-bottom:25px;">
+        <div class="stat-card" style="background:white;border-radius:15px;padding:18px 20px;display:flex;align-items:center;gap:15px;box-shadow:0 2px 10px rgba(0,0,0,0.05);cursor:pointer;">
+            <div class="stat-icon" style="font-size:2rem;width:50px;height:50px;background:#f0f2ff;border-radius:12px;display:flex;align-items:center;justify-content:center;">📦</div>
+            <div class="stat-info">
+                <h3 style="font-size:0.7rem;color:#888;font-weight:500;text-transform:uppercase;letter-spacing:0.5px;margin:0;">Total Stock Items</h3>
+                <p class="stat-number" id="totalStock" style="font-size:1.6rem;font-weight:700;color:#333;margin:2px 0;">0</p>
+                <span class="stat-change positive" style="font-size:0.7rem;color:#22c55e;">↑ 0% this month</span>
+            </div>
+        </div>
+
+        <div class="stat-card" style="background:white;border-radius:15px;padding:18px 20px;display:flex;align-items:center;gap:15px;box-shadow:0 2px 10px rgba(0,0,0,0.05);cursor:pointer;">
+            <div class="stat-icon" style="font-size:2rem;width:50px;height:50px;background:#f0f2ff;border-radius:12px;display:flex;align-items:center;justify-content:center;">💰</div>
+            <div class="stat-info">
+                <h3 style="font-size:0.7rem;color:#888;font-weight:500;text-transform:uppercase;letter-spacing:0.5px;margin:0;">Inventory Value</h3>
+                <p class="stat-number" id="inventoryValue" style="font-size:1.6rem;font-weight:700;color:#333;margin:2px 0;">KES 0</p>
+                <span class="stat-change positive" style="font-size:0.7rem;color:#22c55e;">↑ 0% this month</span>
+            </div>
+        </div>
+
+        <div class="stat-card" style="background:white;border-radius:15px;padding:18px 20px;display:flex;align-items:center;gap:15px;box-shadow:0 2px 10px rgba(0,0,0,0.05);cursor:pointer;">
+            <div class="stat-icon" style="font-size:2rem;width:50px;height:50px;background:#f0f2ff;border-radius:12px;display:flex;align-items:center;justify-content:center;">⚠️</div>
+            <div class="stat-info">
+                <h3 style="font-size:0.7rem;color:#888;font-weight:500;text-transform:uppercase;letter-spacing:0.5px;margin:0;">Low Stock</h3>
+                <p class="stat-number" id="lowStock" style="font-size:1.6rem;font-weight:700;color:#f59e0b;margin:2px 0;">0</p>
+                <span class="stat-change negative" style="font-size:0.7rem;color:#ef4444;">⚠️ 0 items</span>
+            </div>
+        </div>
+
+        <div class="stat-card" style="background:white;border-radius:15px;padding:18px 20px;display:flex;align-items:center;gap:15px;box-shadow:0 2px 10px rgba(0,0,0,0.05);cursor:pointer;">
+            <div class="stat-icon" style="font-size:2rem;width:50px;height:50px;background:#f0f2ff;border-radius:12px;display:flex;align-items:center;justify-content:center;">❌</div>
+            <div class="stat-info">
+                <h3 style="font-size:0.7rem;color:#888;font-weight:500;text-transform:uppercase;letter-spacing:0.5px;margin:0;">Out of Stock</h3>
+                <p class="stat-number" id="outOfStock" style="font-size:1.6rem;font-weight:700;color:#ef4444;margin:2px 0;">0</p>
+                <span class="stat-change negative" style="font-size:0.7rem;color:#ef4444;">🔴 0 items</span>
+            </div>
+        </div>
+
+        <div class="stat-card" style="background:white;border-radius:15px;padding:18px 20px;display:flex;align-items:center;gap:15px;box-shadow:0 2px 10px rgba(0,0,0,0.05);cursor:pointer;">
+            <div class="stat-icon" style="font-size:2rem;width:50px;height:50px;background:#f0f2ff;border-radius:12px;display:flex;align-items:center;justify-content:center;">⏰</div>
+            <div class="stat-info">
+                <h3 style="font-size:0.7rem;color:#888;font-weight:500;text-transform:uppercase;letter-spacing:0.5px;margin:0;">Expiring Soon</h3>
+                <p class="stat-number" id="expiringSoon" style="font-size:1.6rem;font-weight:700;color:#f59e0b;margin:2px 0;">0</p>
+                <span class="stat-change negative" style="font-size:0.7rem;color:#ef4444;">⚠️ 0 products</span>
+            </div>
+        </div>
+
+        <div class="stat-card" style="background:white;border-radius:15px;padding:18px 20px;display:flex;align-items:center;gap:15px;box-shadow:0 2px 10px rgba(0,0,0,0.05);cursor:pointer;">
+            <div class="stat-icon" style="font-size:2rem;width:50px;height:50px;background:#f0f2ff;border-radius:12px;display:flex;align-items:center;justify-content:center;">📝</div>
+            <div class="stat-info">
+                <h3 style="font-size:0.7rem;color:#888;font-weight:500;text-transform:uppercase;letter-spacing:0.5px;margin:0;">Pending Requests</h3>
+                <p class="stat-number" id="pendingRequests" style="font-size:1.6rem;font-weight:700;color:#3b82f6;margin:2px 0;">0</p>
+                <span class="stat-change neutral" style="font-size:0.7rem;color:#3b82f6;">📋 0 requests</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== QUICK ACTIONS ===== -->
+    <section class="quick-actions" style="display:flex;gap:12px;flex-wrap:wrap;margin-top:5px;">
+        <a href="add-item.html" class="quick-action-btn" style="display:inline-flex;align-items:center;gap:8px;padding:10px 20px;background:white;border:2px solid #e0e0e0;border-radius:12px;font-size:0.85rem;font-weight:500;color:#555;cursor:pointer;transition:all 0.3s ease;font-family:'Poppins',sans-serif;text-decoration:none;"><span>➕</span> Add Item</a>
+        <a href="receive-stock.html" class="quick-action-btn" style="display:inline-flex;align-items:center;gap:8px;padding:10px 20px;background:white;border:2px solid #e0e0e0;border-radius:12px;font-size:0.85rem;font-weight:500;color:#555;cursor:pointer;transition:all 0.3s ease;font-family:'Poppins',sans-serif;text-decoration:none;"><span>📥</span> Receive Stock</a>
+        <a href="issue-stock.html" class="quick-action-btn" style="display:inline-flex;align-items:center;gap:8px;padding:10px 20px;background:white;border:2px solid #e0e0e0;border-radius:12px;font-size:0.85rem;font-weight:500;color:#555;cursor:pointer;transition:all 0.3s ease;font-family:'Poppins',sans-serif;text-decoration:none;"><span>📤</span> Issue Stock</a>
+        <a href="stock-count.html" class="quick-action-btn" style="display:inline-flex;align-items:center;gap:8px;padding:10px 20px;background:white;border:2px solid #e0e0e0;border-radius:12px;font-size:0.85rem;font-weight:500;color:#555;cursor:pointer;transition:all 0.3s ease;font-family:'Poppins',sans-serif;text-decoration:none;"><span>📋</span> Start Stock Count</a>
+        <a href="reports-dashboard.html" class="quick-action-btn" style="display:inline-flex;align-items:center;gap:8px;padding:10px 20px;background:white;border:2px solid #e0e0e0;border-radius:12px;font-size:0.85rem;font-weight:500;color:#555;cursor:pointer;transition:all 0.3s ease;font-family:'Poppins',sans-serif;text-decoration:none;"><span>📄</span> Generate Report</a>
+        <a href="notifications.html" class="quick-action-btn" style="display:inline-flex;align-items:center;gap:8px;padding:10px 20px;background:white;border:2px solid #e0e0e0;border-radius:12px;font-size:0.85rem;font-weight:500;color:#555;cursor:pointer;transition:all 0.3s ease;font-family:'Poppins',sans-serif;text-decoration:none;"><span>🔔</span> Notifications</a>
+        <a href="security.html" class="quick-action-btn" style="display:inline-flex;align-items:center;gap:8px;padding:10px 20px;background:white;border:2px solid #e0e0e0;border-radius:12px;font-size:0.85rem;font-weight:500;color:#555;cursor:pointer;transition:all 0.3s ease;font-family:'Poppins',sans-serif;text-decoration:none;"><span>🔐</span> Security</a>
+    </section>
+
+</main>
+
+<script src="js/script.js"></script>
+
+<script>
+    // ============================================
+    // SIDEBAR TOGGLE
+    // ============================================
+    function toggleSidebar() {
+        var sidebar = document.getElementById('sidebar');
+        var overlay = document.getElementById('sidebarOverlay');
         if (sidebar) {
-            sidebar.style.display = '';
-            sidebar.style.cssText = '';
-            sidebar.style.display = 'flex';
-            sidebar.style.position = 'sticky';
-            sidebar.style.left = '0';
-            sidebar.style.top = '0';
-            sidebar.style.width = '240px';
-            sidebar.style.height = '100vh';
-            sidebar.style.background = 'linear-gradient(180deg, #667eea 0%, #764ba2 100%)';
-            sidebar.style.color = 'white';
-            sidebar.style.padding = '20px 0';
-            sidebar.style.flexDirection = 'column';
-            sidebar.style.flexShrink = '0';
-            sidebar.style.zIndex = '100';
+            sidebar.classList.toggle('open');
+            if (overlay) {
+                if (sidebar.classList.contains('open')) {
+                    overlay.style.display = 'block';
+                } else {
+                    overlay.style.display = 'none';
+                }
+            }
         }
-        
-        console.log("✅ Sidebar forced visible!");
-        
-        // Also show hamburger button on mobile
-        var menuBtn = document.querySelector('.mobile-menu-btn');
-        if (menuBtn) {
-            menuBtn.style.display = 'block';
+    }
+
+    // Close sidebar when clicking overlay
+    document.addEventListener('DOMContentLoaded', function() {
+        var overlay = document.getElementById('sidebarOverlay');
+        if (overlay) {
+            overlay.addEventListener('click', function() {
+                document.getElementById('sidebar').classList.remove('open');
+                overlay.style.display = 'none';
+            });
         }
     });
+
+    // ============================================
+    // LOAD USER PROFILE
+    // ============================================
+    document.addEventListener('DOMContentLoaded', function() {
+        var currentUser = JSON.parse(localStorage.getItem('currentUser'));
+        var savedProfile = JSON.parse(localStorage.getItem('profileData'));
+        
+        var nameEl = document.getElementById('dashboardUserName');
+        var roleEl = document.getElementById('dashboardUserRole');
+        var avatarEl = document.getElementById('dashboardUserAvatar');
+        
+        var name = savedProfile?.name || currentUser?.name || 'User';
+        var role = savedProfile?.role || currentUser?.role || 'Storekeeper';
+        
+        if (nameEl) nameEl.textContent = name;
+        if (roleEl) roleEl.textContent = role;
+        
+        if (avatarEl && savedProfile?.profilePicture) {
+            avatarEl.innerHTML = '<img src="' + savedProfile.profilePicture + '" style="width:40px;height:40px;border-radius:50%;object-fit:cover;">';
+        }
+    });
+
+    // ============================================
+    // PROFILE BUTTON
+    // ============================================
+    document.getElementById('userProfileBtn')?.addEventListener('click', function() {
+        window.location.href = 'profile.html';
+    });
+
+    // ============================================
+    // LOGOUT
+    // ============================================
+    document.getElementById('logoutBtn')?.addEventListener('click', function(e) {
+        e.preventDefault();
+        if (confirm('🚪 Are you sure you want to logout?')) {
+            localStorage.removeItem('currentUser');
+            localStorage.removeItem('profileData');
+            window.location.href = 'index.html';
+        }
+    });
+
+    // ============================================
+    // FIREBASE FUNCTIONS
+    // ============================================
+    const firebaseConfig = {
+        apiKey: "AIzaSyAwcI_RRe3nRS8ZLxExsyyT4PDdtv5g4kg",
+        authDomain: "smart-stock-app-da50f.firebaseapp.com",
+        projectId: "smart-stock-app-da50f",
+        storageBucket: "smart-stock-app-da50f.appspot.com",
+        messagingSenderId: "512981075308",
+        appId: "1:512981075308:web:491c04288f19aa26775f49",
+        measurementId: "G-QPCK6Q566V"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    async function getProducts() {
+        try {
+            var currentUser = JSON.parse(localStorage.getItem('currentUser'));
+            var companyId = currentUser?.companyId || 'default';
+            var snapshot = await db.collection('products')
+                .where('companyId', '==', companyId)
+                .get();
+            var products = [];
+            snapshot.forEach(function(doc) {
+                products.push({ id: doc.id, ...doc.data() });
+            });
+            return products;
+        } catch (error) {
+            console.error("❌ Error:", error);
+            return [];
+        }
+    }
+
+    async function getPendingRequests() {
+        try {
+            var snapshot = await db.collection('stockIssuing')
+                .where('status', '==', 'Pending')
+                .get();
+            var count = snapshot.size;
+            var receivingSnapshot = await db.collection('stockReceiving')
+                .where('status', '==', 'Pending')
+                .get();
+            return count + receivingSnapshot.size;
+        } catch (error) {
+            console.error('Error:', error);
+            return 0;
+        }
+    }
+
+    async function updateDashboardStats() {
+        try {
+            var products = await getProducts();
+            
+            var totalItems = products.reduce(function(sum, p) { return sum + (p.quantity || 0); }, 0);
+            document.getElementById('totalStock').textContent = totalItems.toLocaleString();
+            
+            var totalValue = products.reduce(function(sum, p) { return sum + ((p.price || 0) * (p.quantity || 0)); }, 0);
+            document.getElementById('inventoryValue').textContent = 'KES ' + totalValue.toLocaleString();
+            
+            var low = products.filter(function(p) { return (p.quantity || 0) < 10; });
+            document.getElementById('lowStock').textContent = low.length;
+            
+            var out = products.filter(function(p) { return (p.quantity || 0) === 0; });
+            document.getElementById('outOfStock').textContent = out.length;
+            
+            var today = new Date();
+            var thirtyDays = new Date();
+            thirtyDays.setDate(today.getDate() + 30);
+            var expiring = products.filter(function(p) {
+                if (!p.expiryDate) return false;
+                var expiry = new Date(p.expiryDate);
+                return expiry >= today && expiry <= thirtyDays;
+            });
+            document.getElementById('expiringSoon').textContent = expiring.length;
+            
+            var pending = await getPendingRequests();
+            document.getElementById('pendingRequests').textContent = pending;
+            
+            console.log("✅ Stats updated");
+        } catch (error) {
+            console.error("❌ Error:", error);
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        setTimeout(updateDashboardStats, 500);
+    });
 </script>
-</script>
+
 </body>
 </html>
