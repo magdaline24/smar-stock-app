@@ -20,7 +20,44 @@
     <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <style>
+    /* FORCE SIDEBAR VISIBLE - OVERRIDE EVERYTHING */
+    .sidebar {
+        display: flex !important;
+        position: sticky !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: 240px !important;
+        height: 100vh !important;
+        background: linear-gradient(180deg, #667eea 0%, #764ba2 100%) !important;
+        color: white !important;
+        padding: 20px 0 !important;
+        flex-direction: column !important;
+        flex-shrink: 0 !important;
+        z-index: 100 !important;
+    }
     
+    .sidebar-nav .nav-item {
+        display: flex !important;
+        align-items: center !important;
+        gap: 12px !important;
+        padding: 10px 16px !important;
+        color: rgba(255,255,255,0.7) !important;
+        text-decoration: none !important;
+        border-radius: 10px !important;
+        font-size: 0.9rem !important;
+        font-weight: 500 !important;
+    }
+    
+    .sidebar-nav .nav-item.active {
+        background: rgba(255,255,255,0.2) !important;
+        color: white !important;
+    }
+    
+    .mobile-menu-btn {
+        display: block !important;
+    }
+</style>
     <script>
         const firebaseConfig = {
             apiKey: "AIzaSyAwcI_RRe3nRS8ZLxExsyyT4PDdtv5g4kg",
@@ -73,6 +110,7 @@
     </script>
 </head>
 <body>
+
     <!-- ===== CHECK USER LOGIN ===== -->
     <script>
         const currentUser = JSON.parse(localStorage.getItem('currentUser'));
@@ -684,26 +722,7 @@
         });
     </script>
     <script>
-// ============================================
-// FORCE SIDEBAR VISIBLE
-// ============================================
-document.addEventListener('DOMContentLoaded', function() {
-    // Show all sidebar items
-    const menuItems = document.querySelectorAll('.sidebar-nav .nav-item');
-    menuItems.forEach(item => {
-        item.style.display = 'flex';
-    });
-    
-    // Show sidebar
-    const sidebar = document.querySelector('.sidebar');
-    if (sidebar) {
-        sidebar.style.display = 'flex';
-        sidebar.style.position = 'sticky';
-        sidebar.style.left = '0';
-    }
-    
-    console.log("✅ Sidebar forced visible!");
-});
+
 </script>
 </script>
 <!-- ============================================ -->
@@ -767,6 +786,49 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Run when page loads
     document.addEventListener('DOMContentLoaded', initMobileMenu);
+    <script>
+    // ============================================
+    // FORCE SIDEBAR VISIBLE - OVERRIDE EVERYTHING
+    // ============================================
+    document.addEventListener('DOMContentLoaded', function() {
+        // Get ALL sidebar items
+        var menuItems = document.querySelectorAll('.sidebar-nav .nav-item');
+        menuItems.forEach(function(item) {
+            // Remove ALL inline styles
+            item.style.display = '';
+            item.style.cssText = '';
+            // Force flex display
+            item.style.display = 'flex';
+        });
+        
+        // Force sidebar visible
+        var sidebar = document.querySelector('.sidebar');
+        if (sidebar) {
+            sidebar.style.display = '';
+            sidebar.style.cssText = '';
+            sidebar.style.display = 'flex';
+            sidebar.style.position = 'sticky';
+            sidebar.style.left = '0';
+            sidebar.style.top = '0';
+            sidebar.style.width = '240px';
+            sidebar.style.height = '100vh';
+            sidebar.style.background = 'linear-gradient(180deg, #667eea 0%, #764ba2 100%)';
+            sidebar.style.color = 'white';
+            sidebar.style.padding = '20px 0';
+            sidebar.style.flexDirection = 'column';
+            sidebar.style.flexShrink = '0';
+            sidebar.style.zIndex = '100';
+        }
+        
+        console.log("✅ Sidebar forced visible!");
+        
+        // Also show hamburger button on mobile
+        var menuBtn = document.querySelector('.mobile-menu-btn');
+        if (menuBtn) {
+            menuBtn.style.display = 'block';
+        }
+    });
+</script>
 </script>
 </body>
 </html>
