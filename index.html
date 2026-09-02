@@ -14,7 +14,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#667eea">
-   <script src="sw-register.js"></script>
+   
     <script src="/offline-sync.js"></script>
     
     <!-- Firebase -->
@@ -655,27 +655,7 @@ if (signupForm) {
         }
     });
 }
-if (userId) {
-    // Send welcome email
-    try {
-        await sendWelcomeEmail(
-            fullname,
-            email,
-            role
-        );
-        console.log('📧 Welcome email sent!');
-    } catch (emailError) {
-        console.error('Email error:', emailError);
-    }
-    
-    alert('✅ Account created successfully!\n' +
-          'Name: ' + fullname + '\n' +
-          'Role: ' + role + '\n' +
-          'Email: ' + email);
-    
-    signupForm.style.display = 'none';
-    loginForm.style.display = 'block';
-    signupForm.reset();
+
         // ============================================
         // FORGOT PASSWORD
         // ============================================
