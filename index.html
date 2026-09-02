@@ -20,7 +20,7 @@
     <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-    
+    <script src="resend-functions.js"></script>
     <script>
         // ============================================
         // FIREBASE CONFIG
@@ -655,7 +655,27 @@ if (signupForm) {
         }
     });
 }
-
+if (userId) {
+    // Send welcome email
+    try {
+        await sendWelcomeEmail(
+            fullname,
+            email,
+            role
+        );
+        console.log('📧 Welcome email sent!');
+    } catch (emailError) {
+        console.error('Email error:', emailError);
+    }
+    
+    alert('✅ Account created successfully!\n' +
+          'Name: ' + fullname + '\n' +
+          'Role: ' + role + '\n' +
+          'Email: ' + email);
+    
+    signupForm.style.display = 'none';
+    loginForm.style.display = 'block';
+    signupForm.reset();
         // ============================================
         // FORGOT PASSWORD
         // ============================================
