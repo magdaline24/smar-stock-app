@@ -22,6 +22,13 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <script src="resend-functions.js"></script>
     <script>
+        <!-- EmailJS -->
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+<script>
+    (function() {
+        emailjs.init(zY88iAsGDKuuwCdRa); 
+    })();
+</script>
         // ============================================
         // FIREBASE CONFIG
         // ============================================
@@ -547,6 +554,26 @@ if (loginForm) {
         // ============================================
 // SIGNUP - Firestore ONLY (No Firebase Auth)
 // ============================================
+if (userId) {
+    // Send welcome email via EmailJS
+    try {
+        await emailjs.send(
+            'service_qgairzm',     
+            'template_5b49syf',     
+            {
+                userName: fullname,
+                userEmail: email,
+                userRole: role
+            }
+        );
+        console.log('📧 Welcome email sent!');
+    } catch (emailError) {
+        console.error('Email error:', emailError);
+        // Email failed but account was created - still show success
+    }
+
+    alert('✅ Account created successfully!');
+}
 if (signupForm) {
     signupForm.addEventListener('submit', async function(e) {
         e.preventDefault();

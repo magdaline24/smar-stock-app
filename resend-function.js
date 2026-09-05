@@ -4,8 +4,8 @@
 
 // ===== CONFIGURATION - REPLACE WITH YOUR API KEY! =====
 const RESEND_CONFIG = {
-    apiKey: 're_EeHLkNcN',  // YOUR API KEY from Resend
-    fromEmail: 'onboarding@resend.dev',  // Default Resend email
+    apiKey: 're_EeHlLkNCnL',
+    fromEmail: 'noreply@smartstock-system.netlify.app',  // ← YOUR DOMAIN!
 };
 
 // ============================================
