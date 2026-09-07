@@ -133,64 +133,124 @@
     </div>
 
     <script>
-        let allProducts = [];
+<script>
+    let allProducts = [];
 
-        document.addEventListener('DOMContentLoaded', async function() {
-            allProducts = await getProducts();
-            const productSelect = document.getElementById('issueProduct');
-            productSelect.innerHTML = '<option value="">Select product</option>' +
-                allProducts.map(p => `<option value="${p.id}" data-qty="${p.quantity || 0}">${p.name} (${p.quantity || 0} in stock)</option>`).join('');
-        });
-
-        document.getElementById('issueForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-
-            const department = document.getElementById('issueDepartment').value;
-            const requestNumber = document.getElementById('requestNumber').value;
-            const productId = document.getElementById('issueProduct').value;
-            const qty = parseInt(document.getElementById('issueQty').value);
-            const approvedBy = document.getElementById('approvedBy').value;
-            const remarks = document.getElementById('issueRemarks').value;
-
-            if (!department || !productId || !qty || !approvedBy) {
-                alert('❌ Please fill in all required fields');
-                return;
-            }
-
-            const product = allProducts.find(p => p.id === productId);
-            if (!product) {
-                alert('❌ Product not found');
-                return;
-            }
-
-            if (qty > (product.quantity || 0)) {
-                alert(`❌ Not enough stock! Available: ${product.quantity || 0}`);
-                return;
-            }
-
-            // Save issuing record
+    // ===== GET PRODUCTS FROM FIREBASE =====
+    async function getProducts() {
+        try {
             const currentUser = JSON.parse(localStorage.getItem('currentUser'));
             const companyId = currentUser?.companyId || 'default';
-            await saveIssuing({
-                department: department,
-                requestNumber: requestNumber,
-                product: product.name,
-                productId: productId,
-                quantity: qty,
-                approvedBy: approvedBy,
-                remarks: remarks,
-                issuedBy: JSON.parse(localStorage.getItem('currentUser'))?.name || 'System'
-                companyId: companyId
+            const snapshot = await db.collection('products')
+                .where('companyId', '==', companyId)
+                .get();
+            const products = [];
+            snapshot.forEach(doc => {
+                products.push({ id: doc.id, ...doc.data() });
             });
+            return products;
+        } catch (error) {
+            console.error("❌ Error:", error);
+            return [];
+        }
+    }
 
-            // Update product quantity
-            const newQty = (product.quantity || 0) - qty;
-            await updateProduct(productId, { quantity: newQty });
+    // ===== UPDATE PRODUCT QUANTITY =====
+    async function updateProduct(productId, data) {
+        try {
+            await db.collection('products').doc(productId).update(data);
+            console.log("✅ Product updated:", productId);
+            return true;
+        } catch (error) {
+            console.error("❌ Error updating product:", error);
+            return false;
+        }
+    }
 
-            alert(`✅ Stock issued successfully!\n\n📦 ${product.name}\n📊 ${qty} units\n🏢 ${department}\n👤 Approved by: ${approvedBy}`);
-            this.reset();
-            location.reload();
+    // ===== SAVE ISSUING =====
+    async function saveIssuing(data) {
+        try {
+            const docRef = await db.collection('stockIssuing').add({
+                ...data,
+                date: new Date().toISOString(),
+                status: 'Pending'
+            });
+            console.log("✅ Issuing saved:", docRef.id);
+            return docRef.id;
+        } catch (error) {
+            console.error("❌ Error saving issuing:", error);
+            return null;
+        }
+    }
+
+    // ===== LOAD PRODUCTS ON PAGE LOAD =====
+    document.addEventListener('DOMContentLoaded', async function() {
+        // Load products into dropdown
+        try {
+            allProducts = await getProducts();
+            const select = document.getElementById('issueProduct');
+            if (select) {
+                select.innerHTML = '<option value="">Select product</option>';
+                allProducts.forEach(product => {
+                    const option = document.createElement('option');
+                    option.value = product.id;
+                    option.textContent = `${product.name} (${product.quantity || 0} in stock)`;
+                    select.appendChild(option);
+                });
+            }
+        } catch (error) {
+            console.error('Error loading products:', error);
+        }
+    });
+
+    // ===== FORM SUBMIT =====
+    document.getElementById('issueForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        const department = document.getElementById('issueDepartment').value;
+        const requestNumber = document.getElementById('requestNumber').value;
+        const productId = document.getElementById('issueProduct').value;
+        const qty = parseInt(document.getElementById('issueQty').value);
+        const approvedBy = document.getElementById('approvedBy').value;
+        const remarks = document.getElementById('issueRemarks').value;
+
+        if (!department || !productId || !qty || !approvedBy) {
+            alert('❌ Please fill in all required fields');
+            return;
+        }
+
+        const product = allProducts.find(p => p.id === productId);
+        if (!product) {
+            alert('❌ Product not found');
+            return;
+        }
+
+        if (qty > (product.quantity || 0)) {
+            alert(`❌ Not enough stock! Available: ${product.quantity || 0}`);
+            return;
+        }
+
+        // Save issuing record
+        await saveIssuing({
+            department: department,
+            requestNumber: requestNumber,
+            product: product.name,
+            productId: productId,
+            quantity: qty,
+            approvedBy: approvedBy,
+            remarks: remarks,
+            issuedBy: JSON.parse(localStorage.getItem('currentUser'))?.name || 'System'
         });
-    </script>
+
+        // Update product quantity
+        const newQty = (product.quantity || 0) - qty;
+        await updateProduct(productId, { quantity: newQty });
+
+        alert(`✅ Stock issued successfully!\n\n📦 ${product.name}\n📊 ${qty} units\n🏢 ${department}\n👤 Approved by: ${approvedBy}`);
+        this.reset();
+        location.reload();
+    });
+</script>
+</script>
 </body>
 </html>

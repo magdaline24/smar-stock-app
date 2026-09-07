@@ -3,32 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SmartStock - Login</title>
+    <title>Smart Stock - Login</title>
     
     <link rel="stylesheet" href="css/style.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
     <!-- PWA Support -->
-    <link rel="manifest" href="/manifest.json">
+    <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="images/icon-192.png">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#667eea">
-   
-    <script src="/offline-sync.js"></script>
     
     <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-    <script src="resend-functions.js"></script>
+    
+    <!-- ===== EMAILJS ===== -->
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
     <script>
-        <!-- EmailJS -->
-<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
-<script>
-    (function() {
-        emailjs.init(zY88iAsGDKuuwCdRa); 
-    })();
-</script>
+        (function() {
+            emailjs.init("zY88iAsGDKuuwCdRa");
+        })();
+    </script>
+    <!-- Email Functions -->
+<script src="email-functions.js"></script>
+    
+    <script>
         // ============================================
         // FIREBASE CONFIG
         // ============================================
@@ -117,56 +118,47 @@
         }
 
         // ============================================
-    // EMAIL FUNCTIONS
-    // ============================================
-
-    // Log Email to Firestore
-    async function logEmail(emailData) {
-        try {
-            const docRef = await db.collection('emailLogs').add({
-                ...emailData,
-                date: new Date().toISOString(),
-                status: 'Sent',
-                sentBy: 'System'
-            });
-            console.log("✅ Email logged:", docRef.id);
-            return docRef.id;
-        } catch (error) {
-            console.error("❌ Error logging email:", error);
-            return null;
+        // EMAIL LOG FUNCTIONS (Firestore)
+        // ============================================
+        async function logEmail(emailData) {
+            try {
+                const docRef = await db.collection('emailLogs').add({
+                    ...emailData,
+                    date: new Date().toISOString(),
+                    status: 'Sent',
+                    sentBy: 'System'
+                });
+                console.log("✅ Email logged:", docRef.id);
+                return docRef.id;
+            } catch (error) {
+                console.error("❌ Error logging email:", error);
+                return null;
+            }
         }
-    }
 
-    // Send Welcome Email - Logs to Firestore only
-    async function sendWelcomeEmail(userEmail, userName) {
-        const emailData = {
-            type: 'Welcome Email',
-            recipient: userEmail,
-            subject: 'Welcome to SmartStock!',
-            message: `Hello ${userName},\n\nWelcome to SmartStock! Your account has been created successfully.\n\nPlease login to start managing your inventory.\n\nThank you,\nSmartStock Team`
-        };
-        
-        // This logs to Firestore (NOT Firebase Auth)
-        await logEmail(emailData);
-        console.log(`📧 Welcome email logged for ${userEmail}`);
-        return true;
-    }
+        // ============================================
+        // EMAILJS FUNCTIONS
+        // ============================================
+        async function sendWelcomeEmailJS(userName, userEmail, userRole) {
+            try {
+                const response = await emailjs.send(
+                    'service_qgairzm',
+                    'template_5b49syf',
+                    {
+                        userName: userName,
+                        userEmail: userEmail,
+                        userRole: userRole
+                    }
+                );
+                console.log('📧 Welcome email sent via EmailJS!', response);
+                return true;
+            } catch (error) {
+                console.error('❌ EmailJS error:', error);
+                return false;
+            }
+        }
 
-    // Send Password Reset Email - Logs to Firestore only
-    async function sendPasswordResetEmail(userEmail, verificationCode) {
-        const emailData = {
-            type: 'Password Reset',
-            recipient: userEmail,
-            subject: 'SmartStock - Password Reset',
-            message: `Hello,\n\nYou requested to reset your password.\n\nYour verification code is: ${verificationCode}\n\nThis code expires in 10 minutes.\n\nIf you didn't request this, please ignore.\n\nSmartStock Team`
-        };
-        
-        await logEmail(emailData);
-        console.log(`📧 Password reset email logged for ${userEmail}`);
-        return true;
-    }
-
-    console.log("✅ All Firebase functions loaded!");
+        console.log("✅ All Firebase functions loaded!");
     </script>
 </head>
 <body>
@@ -362,11 +354,9 @@
             const select = document.getElementById('companyId');
             
             if (select) {
-                // Clear existing options except first two
                 while (select.options.length > 2) {
                     select.remove(2);
                 }
-                // Add companies
                 companies.forEach(company => {
                     const option = document.createElement('option');
                     option.value = company.id;
@@ -492,196 +482,174 @@
         }
 
         // ============================================
-// LOGIN - Firestore ONLY (No Firebase Auth)
-// ============================================
-if (loginForm) {
-    loginForm.addEventListener('submit', async function(e) {
-        e.preventDefault();
-        
-        const email = document.getElementById('email').value;
-        const password = document.getElementById('password').value;
-        
-        if (email === '' || password === '') {
-            alert('❌ Please fill in all fields');
-            return;
-        }
-        
-        try {
-            // 🔥 STEP 1: Check if user exists in FIRESTORE (not Firebase Auth)
-            const user = await getUserByEmail(email);
-            if (!user) {
-                alert('❌ User not found. Please sign up first.');
-                return;
-            }
-            
-            // 🔥 STEP 2: Check password from FIRESTORE
-            if (user.password !== password) {
-                alert('❌ Incorrect password. Please try again.');
-                return;
-            }
-            
-            // 🔥 STEP 3: Store user in localStorage (NO verification check!)
-            localStorage.setItem('currentUser', JSON.stringify({
-                email: email,
-                role: user.role,
-                name: user.fullName,
-                companyId: user.companyId || 'default'
-            }));
-
-            localStorage.setItem('profileData', JSON.stringify({
-                name: user.fullName,
-                role: user.role,
-                email: email,
-                phone: user.phone || '',
-                department: user.department || '',
-                employeeNo: user.employeeNo || 'EMP-' + Date.now(),
-                dateJoined: user.dateCreated || new Date().toLocaleDateString(),
-                lastLogin: new Date().toLocaleString()
-            }));
-
-            // 🔥 STEP 4: Update last login in FIRESTORE
-            await updateUser(user.id, { lastLogin: new Date().toISOString() });
-            
-            alert('✅ Login successful!\nWelcome back, ' + user.fullName);
-            window.location.href = 'dashboard.html';
-            
-        } catch (error) {
-            console.error('Login error:', error);
-            alert('❌ Login error: ' + error.message);
-        }
-    });
-}
+        // LOGIN
         // ============================================
-// SIGNUP - Firestore ONLY (No Firebase Auth)
-// ============================================
-if (userId) {
-    // Send welcome email via EmailJS
-    try {
-        await emailjs.send(
-            'service_qgairzm',     
-            'template_5b49syf',     
-            {
-                userName: fullname,
-                userEmail: email,
-                userRole: role
-            }
-        );
-        console.log('📧 Welcome email sent!');
-    } catch (emailError) {
-        console.error('Email error:', emailError);
-        // Email failed but account was created - still show success
-    }
+        if (loginForm) {
+            loginForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                const email = document.getElementById('email').value;
+                const password = document.getElementById('password').value;
+                
+                if (email === '' || password === '') {
+                    alert('❌ Please fill in all fields');
+                    return;
+                }
+                
+                try {
+                    const user = await getUserByEmail(email);
+                    if (!user) {
+                        alert('❌ User not found. Please sign up first.');
+                        return;
+                    }
+                    
+                    if (user.password !== password) {
+                        alert('❌ Incorrect password. Please try again.');
+                        return;
+                    }
+                    
+                    localStorage.setItem('currentUser', JSON.stringify({
+                        email: email,
+                        role: user.role,
+                        name: user.fullName,
+                        companyId: user.companyId || 'default'
+                    }));
 
-    alert('✅ Account created successfully!');
-}
-if (signupForm) {
-    signupForm.addEventListener('submit', async function(e) {
-        e.preventDefault();
-        
-        const fullname = document.getElementById('fullname').value;
-        const email = document.getElementById('signupEmail').value;
-        const password = document.getElementById('signupPassword').value;
-        const confirmPassword = document.getElementById('confirmPassword').value;
-        const role = document.getElementById('role').value;
-        const companyId = document.getElementById('companyId').value;
-        
-        if (fullname === '' || email === '' || password === '' || confirmPassword === '') {
-            alert('❌ Please fill in all fields');
-            return;
-        }
-        
-        if (password !== confirmPassword) {
-            alert('❌ Passwords do not match!');
-            return;
-        }
-        
-        if (password.length < 6) {
-            alert('❌ Password must be at least 6 characters long');
-            return;
-        }
-        
-        if (!companyId) {
-            alert('❌ Please select or register a company');
-            return;
-        }
-        
-        try {
-            // 🔥 STEP 1: Check if user already exists in FIRESTORE
-            const existingUser = await getUserByEmail(email);
-            if (existingUser) {
-                alert('❌ User with this email already exists!');
-                return;
-            }
-            
-            let finalCompanyId = companyId;
-            
-            // If registering new company
-            if (companyId === 'new') {
-                const newCompanyName = document.getElementById('newCompanyName').value;
-                const newCompanyColor = document.getElementById('newCompanyColor').value || '#667eea';
-                
-                if (!newCompanyName) {
-                    alert('❌ Please enter a company name');
-                    return;
+                    localStorage.setItem('profileData', JSON.stringify({
+                        name: user.fullName,
+                        role: user.role,
+                        email: email,
+                        phone: user.phone || '',
+                        department: user.department || '',
+                        employeeNo: user.employeeNo || 'EMP-' + Date.now(),
+                        dateJoined: user.dateCreated || new Date().toLocaleDateString(),
+                        lastLogin: new Date().toLocaleString()
+                    }));
+
+                    await updateUser(user.id, { lastLogin: new Date().toISOString() });
+                    
+                    alert('✅ Login successful!\nWelcome back, ' + user.fullName);
+                    window.location.href = 'dashboard.html';
+                } catch (error) {
+                    console.error('Login error:', error);
+                    alert('❌ Login error: ' + error.message);
                 }
-                
-                const companyLogo = logoDataURL || '🏢';
-                
-                finalCompanyId = await addCompany({
-                    name: newCompanyName,
-                    logo: companyLogo,
-                    primaryColor: newCompanyColor,
-                    address: '',
-                    phone: '',
-                    createdDate: new Date().toISOString(),
-                    createdBy: email
-                });
-                
-                if (!finalCompanyId) {
-                    alert('❌ Error creating company. Please try again.');
-                    return;
-                }
-            }
-            
-            // 🔥 STEP 2: Save user to FIRESTORE (NOT Firebase Auth)
-            const userId = await addUser({
-                fullName: fullname,
-                email: email,
-                password: password,  // ← This is saved in Firestore
-                role: role,
-                companyId: finalCompanyId,
-                status: 'Active',
-                dateCreated: new Date().toISOString(),
-                lastLogin: null,
-                phone: '',
-                department: '',
-                profilePicture: ''
             });
-            
-            if (userId) {
-                // 🔥 STEP 3: Send welcome email (logs to Firestore, NOT Firebase Auth)
-                await sendWelcomeEmail(email, fullname);
-                
-                alert('✅ Account created successfully!\n' +
-                      'Name: ' + fullname + '\n' +
-                      'Role: ' + role + '\n' +
-                      'Email: ' + email);
-                
-                signupForm.style.display = 'none';
-                loginForm.style.display = 'block';
-                signupForm.reset();
-                newCompanyFields.style.display = 'none';
-                logoDataURL = '';
-                document.getElementById('logoPreview').style.display = 'none';
-            } else {
-                alert('❌ Error creating account. Please try again.');
-            }
-        } catch (error) {
-            console.error('Signup error:', error);
-            alert('❌ Signup error: ' + error.message);
         }
-    });
-}
+
+        // ============================================
+        // SIGNUP
+        // ============================================
+        if (signupForm) {
+            signupForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                const fullname = document.getElementById('fullname').value;
+                const email = document.getElementById('signupEmail').value;
+                const password = document.getElementById('signupPassword').value;
+                const confirmPassword = document.getElementById('confirmPassword').value;
+                const role = document.getElementById('role').value;
+                const companyId = document.getElementById('companyId').value;
+                
+                if (fullname === '' || email === '' || password === '' || confirmPassword === '') {
+                    alert('❌ Please fill in all fields');
+                    return;
+                }
+                
+                if (password !== confirmPassword) {
+                    alert('❌ Passwords do not match!');
+                    return;
+                }
+                
+                if (password.length < 6) {
+                    alert('❌ Password must be at least 6 characters long');
+                    return;
+                }
+                
+                if (!companyId) {
+                    alert('❌ Please select or register a company');
+                    return;
+                }
+                
+                try {
+                    const existingUser = await getUserByEmail(email);
+                    if (existingUser) {
+                        alert('❌ User with this email already exists!');
+                        return;
+                    }
+                    
+                    let finalCompanyId = companyId;
+                    
+                    if (companyId === 'new') {
+                        const newCompanyName = document.getElementById('newCompanyName').value;
+                        const newCompanyColor = document.getElementById('newCompanyColor').value || '#667eea';
+                        
+                        if (!newCompanyName) {
+                            alert('❌ Please enter a company name');
+                            return;
+                        }
+                        
+                        const companyLogo = logoDataURL || '🏢';
+                        
+                        finalCompanyId = await addCompany({
+                            name: newCompanyName,
+                            logo: companyLogo,
+                            primaryColor: newCompanyColor,
+                            address: '',
+                            phone: '',
+                            createdDate: new Date().toISOString(),
+                            createdBy: email
+                        });
+                        
+                        if (!finalCompanyId) {
+                            alert('❌ Error creating company. Please try again.');
+                            return;
+                        }
+                    }
+                    
+                    const userId = await addUser({
+                        fullName: fullname,
+                        email: email,
+                        password: password,
+                        role: role,
+                        companyId: finalCompanyId,
+                        status: 'Active',
+                        dateCreated: new Date().toISOString(),
+                        lastLogin: null,
+                        phone: '',
+                        department: '',
+                        profilePicture: ''
+                    });
+                    
+                    if (userId) {
+                        // ===== SEND WELCOME EMAIL VIA EMAILJS =====
+                        try {
+                            await sendWelcomeEmailJS(fullname, email, role);
+                            console.log('📧 Welcome email sent via EmailJS!');
+                        } catch (emailError) {
+                            console.error('EmailJS error:', emailError);
+                        }
+                        
+                        alert('✅ Account created successfully!\n' +
+                              'Name: ' + fullname + '\n' +
+                              'Role: ' + role + '\n' +
+                              'Email: ' + email);
+                        
+                        signupForm.style.display = 'none';
+                        loginForm.style.display = 'block';
+                        signupForm.reset();
+                        newCompanyFields.style.display = 'none';
+                        logoDataURL = '';
+                        document.getElementById('logoPreview').style.display = 'none';
+                    } else {
+                        alert('❌ Error creating account. Please try again.');
+                    }
+                } catch (error) {
+                    console.error('Signup error:', error);
+                    alert('❌ Signup error: ' + error.message);
+                }
+            });
+        }
 
         // ============================================
         // FORGOT PASSWORD
@@ -707,8 +675,6 @@ if (signupForm) {
                     resetUserId = user.id;
                     verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
                     console.log("📱 Verification code:", verificationCode);
-                    
-                    await sendPasswordResetEmail(resetEmail, verificationCode);
                     
                     alert(`✅ Verification code sent to ${resetEmail}\n\n📱 Your code is: ${verificationCode}`);
                     
@@ -797,4 +763,5 @@ if (signupForm) {
             });
         }
     </script>
-</body
+</body>
+</html>

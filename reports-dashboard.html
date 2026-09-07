@@ -24,7 +24,13 @@
     <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-    
+    <!-- EmailJS -->
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+<script>
+    (function() {
+        emailjs.init("zY88iAsGDKuuwCdRa");
+    })();
+</script>
     <script>
         const firebaseConfig = {
             apiKey: "AIzaSyAwcI_RRe3nRS8ZLxExsyyT4PDdtv5g4kg",
@@ -365,9 +371,46 @@ async function getProducts() {
             alert('✅ Excel exported!');
         }
 
-        function emailReport() {
-            alert('📧 Email Report coming soon!');
+   function emailReport() {
+    // Get the report content
+    const content = document.getElementById('reportContent');
+    if (!content) {
+        alert('📄 Please generate a report first!');
+        return;
+    }
+
+    // Ask for recipient email
+    const recipientEmail = prompt('📧 Enter recipient email address:', 'wambuimagdalene79@gmail.com');
+    if (!recipientEmail) return;
+
+    // Get report details
+    const titleEl = content.querySelector('.report-header h1');
+    const reportType = titleEl ? titleEl.textContent : 'SmartStock Report';
+    const generatedBy = JSON.parse(localStorage.getItem('currentUser'))?.name || 'System';
+
+    console.log('📧 Sending report to:', recipientEmail);
+    console.log('📧 Report type:', reportType);
+
+    // Send email directly using EmailJS
+    emailjs.send(
+        'service_qgairzm',
+        'template_sotuau3',
+        {
+            userName: 'Report Recipient',
+            userEmail: recipientEmail,
+            userRole: 'Report Viewer',
+            loginLink: 'https://smartstock-system.netlify.app/reports-dashboard.html'
         }
+    )
+    .then(function(response) {
+        console.log('✅ Report email sent!', response);
+        alert('✅ Report sent successfully to ' + recipientEmail + '!');
+    })
+    .catch(function(error) {
+        console.error('❌ Email error DETAILS:', error);
+        alert('❌ Error sending report. Check console for details.\n\nError: ' + error.text);
+    });
+}
 
         document.addEventListener('DOMContentLoaded', function() {
             const today = new Date();

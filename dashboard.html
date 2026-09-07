@@ -20,7 +20,21 @@
     <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-    <script src="resend-functions.js"></script>
+    
+    <!-- EmailJS -->
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    <script>
+        (function() {
+            emailjs.init("zY88iAsGDKuuwCdRa");
+        })();
+    </script>
+    <script
+    // ===== GET CURRENT USER COMPANY =====
+function getCurrentCompanyId() {
+    const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+    return currentUser?.companyId || 'default';
+}
+</script></script>
     <script>
         const firebaseConfig = {
             apiKey: "AIzaSyAwcI_RRe3nRS8ZLxExsyyT4PDdtv5g4kg",
@@ -36,38 +50,188 @@
         const db = firebase.firestore();
         console.log("🔥 Firebase connected!");
 
-        // ===== GET PRODUCTS =====
-        async function getProducts() {
-            try {
-                const currentUser = JSON.parse(localStorage.getItem('currentUser'));
-                const companyId = currentUser?.companyId || 'default';
-                const snapshot = await db.collection('products')
-                    .where('companyId', '==', companyId)
-                    .get();
-                const products = [];
-                snapshot.forEach(doc => {
-                    products.push({ id: doc.id, ...doc.data() });
-                });
-                return products;
-            } catch (error) {
-                console.error("❌ Error:", error);
-                return [];
-            }
+        // ===== GET CURRENT USER COMPANY =====
+        function getCurrentCompanyId() {
+            const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+            return currentUser?.companyId || 'default';
         }
 
+        // ===== GET PRODUCTS BY COMPANY =====
+async function getProducts() {
+    try {
+        const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+        const companyId = currentUser?.companyId || 'default';
+        
+        const snapshot = await db.collection('products')
+            .where('companyId', '==', companyId)
+            .get();
+            
+        const products = [];
+        snapshot.forEach(doc => {
+            products.push({ id: doc.id, ...doc.data() });
+        });
+        return products;
+    } catch (error) {
+        console.error("❌ Error getting products:", error);
+        // Fallback: get all products if filter fails
+        try {
+            const snapshot = await db.collection('products').get();
+            const products = [];
+            snapshot.forEach(doc => {
+                products.push({ id: doc.id, ...doc.data() });
+            });
+            return products;
+        } catch (fallbackError) {
+            console.error("❌ Fallback error:", fallbackError);
+            return [];
+        }
+    }
+}
+
+        // ===== GET PENDING REQUESTS =====
         async function getPendingRequests() {
             try {
+                const companyId = getCurrentCompanyId();
                 const snapshot = await db.collection('stockIssuing')
+                    .where('companyId', '==', companyId)
                     .where('status', '==', 'Pending')
                     .get();
                 const count = snapshot.size;
                 const receivingSnapshot = await db.collection('stockReceiving')
+                    .where('companyId', '==', companyId)
                     .where('status', '==', 'Pending')
                     .get();
                 return count + receivingSnapshot.size;
             } catch (error) {
                 console.error('Error:', error);
                 return 0;
+            }
+        }
+
+        // ===== GET STOCK RECEIVING BY COMPANY =====
+        async function getStockReceivingByCompany() {
+            try {
+                const companyId = getCurrentCompanyId();
+                const snapshot = await db.collection('stockReceiving')
+                    .where('companyId', '==', companyId)
+                    .orderBy('date', 'desc')
+                    .limit(5)
+                    .get();
+                const items = [];
+                snapshot.forEach(doc => {
+                    items.push({ id: doc.id, ...doc.data() });
+                });
+                return items;
+            } catch (error) {
+                console.error("❌ Error:", error);
+                return [];
+            }
+        }
+
+        // ===== GET STOCK ISSUING BY COMPANY =====
+        async function getStockIssuingByCompany() {
+            try {
+                const companyId = getCurrentCompanyId();
+                const snapshot = await db.collection('stockIssuing')
+                    .where('companyId', '==', companyId)
+                    .orderBy('date', 'desc')
+                    .limit(5)
+                    .get();
+                const items = [];
+                snapshot.forEach(doc => {
+                    items.push({ id: doc.id, ...doc.data() });
+                });
+                return items;
+            } catch (error) {
+                console.error("❌ Error:", error);
+                return [];
+            }
+        }
+
+        // ===== GET ACTIVITIES BY COMPANY =====
+        async function getActivitiesByCompany() {
+            try {
+                const companyId = getCurrentCompanyId();
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                
+                const activities = [];
+                
+                const receiving = await db.collection('stockReceiving')
+                    .where('companyId', '==', companyId)
+                    .where('date', '>=', today.toISOString())
+                    .get();
+                receiving.forEach(doc => {
+                    const data = doc.data();
+                    activities.push({
+                        text: `📥 ${data.item || 'Item'} received by ${data.receivedBy || 'System'}`,
+                        time: new Date(data.date).toLocaleTimeString()
+                    });
+                });
+                
+                const issuing = await db.collection('stockIssuing')
+                    .where('companyId', '==', companyId)
+                    .where('date', '>=', today.toISOString())
+                    .get();
+                issuing.forEach(doc => {
+                    const data = doc.data();
+                    activities.push({
+                        text: `📤 ${data.item || 'Item'} issued to ${data.issuedTo || 'Someone'}`,
+                        time: new Date(data.date).toLocaleTimeString()
+                    });
+                });
+                
+                activities.sort((a, b) => {
+                    if (a.time > b.time) return -1;
+                    if (a.time < b.time) return 1;
+                    return 0;
+                });
+                
+                return activities;
+            } catch (error) {
+                console.error('Error:', error);
+                return [];
+            }
+        }
+
+        // ===== GET NOTIFICATIONS BY COMPANY =====
+        async function getNotificationsByCompany() {
+            try {
+                const companyId = getCurrentCompanyId();
+                const products = await getProducts();
+                const notifications = [];
+                
+                // Low stock alerts
+                const lowStock = products.filter(p => (p.quantity || 0) < 10);
+                lowStock.forEach(p => {
+                    notifications.push({
+                        type: 'low',
+                        title: `⚠️ Low Stock: ${p.name}`,
+                        message: `Only ${p.quantity || 0} units remaining. Please reorder.`
+                    });
+                });
+                
+                // Expiring alerts
+                const today = new Date();
+                const sevenDays = new Date();
+                sevenDays.setDate(today.getDate() + 7);
+                const expiring = products.filter(p => {
+                    if (!p.expiryDate) return false;
+                    const expiry = new Date(p.expiryDate);
+                    return expiry >= today && expiry <= sevenDays;
+                });
+                expiring.forEach(p => {
+                    notifications.push({
+                        type: 'expiry',
+                        title: `⏰ Expiring: ${p.name}`,
+                        message: `Expires on ${new Date(p.expiryDate).toLocaleDateString()}`
+                    });
+                });
+                
+                return notifications;
+            } catch (error) {
+                console.error('Error:', error);
+                return [];
             }
         }
     </script>
@@ -149,7 +313,6 @@
             <!-- ===== TOP NAV ===== -->
             <header class="top-nav">
                 <div class="nav-left">
-                    <button onclick="toggleSidebar()" style="background:none;border:none;font-size:28px;cursor:pointer;padding:5px 10px;color:#333;">☰</button>
                     <button id="menuBtn" class="mobile-menu-btn">☰</button>
                     <h1>Dashboard</h1>
                     <div class="search-bar">
@@ -159,7 +322,7 @@
                 
                 <div class="nav-right">
                     <button class="btn-notification" id="notifBtn">
-                        🔔 <span class="notification-badge">0</span>
+                        🔔 <span class="notification-badge" id="notifBadge">0</span>
                     </button>
                     
                     <div class="user-profile" id="userProfileBtn">
@@ -174,7 +337,7 @@
 
             <!-- ===== STATS GRID ===== -->
             <section class="stats-grid" id="statsGrid">
-                <div class="stat-card">
+                <div class="stat-card" data-stat="total">
                     <div class="stat-icon">📦</div>
                     <div class="stat-info">
                         <h3>Total Stock Items</h3>
@@ -183,7 +346,7 @@
                     </div>
                 </div>
 
-                <div class="stat-card">
+                <div class="stat-card" data-stat="value">
                     <div class="stat-icon">💰</div>
                     <div class="stat-info">
                         <h3>Inventory Value</h3>
@@ -192,7 +355,7 @@
                     </div>
                 </div>
 
-                <div class="stat-card">
+                <div class="stat-card" data-stat="low">
                     <div class="stat-icon">⚠️</div>
                     <div class="stat-info">
                         <h3>Low Stock</h3>
@@ -201,7 +364,7 @@
                     </div>
                 </div>
 
-                <div class="stat-card">
+                <div class="stat-card" data-stat="out">
                     <div class="stat-icon">❌</div>
                     <div class="stat-info">
                         <h3>Out of Stock</h3>
@@ -210,7 +373,7 @@
                     </div>
                 </div>
 
-                <div class="stat-card">
+                <div class="stat-card" data-stat="expiring">
                     <div class="stat-icon">⏰</div>
                     <div class="stat-info">
                         <h3>Expiring Soon</h3>
@@ -219,7 +382,7 @@
                     </div>
                 </div>
 
-                <div class="stat-card">
+                <div class="stat-card" data-stat="pending">
                     <div class="stat-icon">📝</div>
                     <div class="stat-info">
                         <h3>Pending Requests</h3>
@@ -314,33 +477,30 @@
 
     <script>
         // ============================================
-        // MOBILE MENU
+        // MOBILE SIDEBAR TOGGLE
         // ============================================
         document.addEventListener('DOMContentLoaded', function() {
             const menuBtn = document.getElementById('menuBtn');
             const sidebar = document.getElementById('sidebar');
             const overlay = document.getElementById('sidebarOverlay');
 
-            if (menuBtn && sidebar && overlay) {
-                // Toggle sidebar on menu button click
-                menuBtn.addEventListener('click', function(e) {
-                    e.stopPropagation();
+            if (menuBtn) {
+                menuBtn.addEventListener('click', function() {
                     sidebar.classList.toggle('mobile-open');
                     overlay.classList.toggle('active');
+                    if (overlay.classList.contains('active')) {
+                        overlay.style.display = 'block';
+                    } else {
+                        overlay.style.display = 'none';
+                    }
                 });
+            }
 
-                // Close sidebar when overlay is clicked
+            if (overlay) {
                 overlay.addEventListener('click', function() {
                     sidebar.classList.remove('mobile-open');
                     overlay.classList.remove('active');
-                });
-
-                // Close sidebar on window resize (if going to desktop view)
-                window.addEventListener('resize', function() {
-                    if (window.innerWidth > 768) {
-                        sidebar.classList.remove('mobile-open');
-                        overlay.classList.remove('active');
-                    }
+                    overlay.style.display = 'none';
                 });
             }
 
@@ -384,6 +544,39 @@
             });
 
             // ============================================
+            // NOTIFICATION BELL
+            // ============================================
+            document.getElementById('notifBtn')?.addEventListener('click', async function() {
+                try {
+                    const notifications = await getNotificationsByCompany();
+                    const badge = document.getElementById('notifBadge');
+                    
+                    if (notifications.length === 0) {
+                        alert('✅ No new notifications\n\nAll systems are good!');
+                        badge.textContent = '0';
+                    } else {
+                        badge.textContent = notifications.length;
+                        const message = notifications.map((n, i) => `${i+1}. ${n.title}\n   ${n.message}`).join('\n\n');
+                        alert(`🔔 ${notifications.length} notifications:\n\n${message}`);
+                    }
+                } catch (error) {
+                    console.error('Error loading notifications:', error);
+                    alert('❌ Error loading notifications');
+                }
+            });
+
+            // ============================================
+            // STAT CARDS - CLICKABLE
+            // ============================================
+            document.querySelectorAll('.stat-card').forEach(card => {
+                card.addEventListener('click', function() {
+                    const title = this.querySelector('.stat-info h3')?.textContent || 'Stat';
+                    const number = this.querySelector('.stat-number')?.textContent || '0';
+                    alert(`📊 ${title}\n\nCurrent Value: ${number}`);
+                });
+            });
+
+            // ============================================
             // UPDATE DASHBOARD STATS
             // ============================================
             async function updateDashboardStats() {
@@ -419,7 +612,7 @@
                     
                     console.log("✅ Stats updated");
                 } catch (error) {
-                    console.error("❌ Error:", error);
+                    console.error("❌ Error updating stats:", error);
                 }
             }
 
@@ -480,76 +673,95 @@
                         }
                     }
                 } catch (error) {
-                    console.error("❌ Error:", error);
+                    console.error("❌ Error updating pie chart:", error);
                 }
             }
 
             // ============================================
-            // UPDATE TRANSACTIONS
-            // ============================================
-            async function updateTransactions() {
-                try {
-                    const tbody = document.getElementById('transactionBody');
-                    if (!tbody) return;
-                    
-                    const receivingSnap = await db.collection('stockReceiving')
-                        .orderBy('date', 'desc')
-                        .limit(5)
-                        .get();
-                    
-                    const issuingSnap = await db.collection('stockIssuing')
-                        .orderBy('date', 'desc')
-                        .limit(5)
-                        .get();
-                    
-                    const transactions = [];
-                    receivingSnap.forEach(doc => {
-                        const data = doc.data();
-                        transactions.push({
-                            date: data.date || new Date().toISOString(),
-                            item: data.item || 'Item',
-                            action: 'Received',
-                            badge: 'badge-in',
-                            user: data.receivedBy || 'System',
-                            status: data.status || 'Completed'
-                        });
-                    });
-                    
-                    issuingSnap.forEach(doc => {
-                        const data = doc.data();
-                        transactions.push({
-                            date: data.date || new Date().toISOString(),
-                            item: data.item || 'Item',
-                            action: 'Issued',
-                            badge: 'badge-out',
-                            user: data.issuedBy || 'System',
-                            status: data.status || 'Pending'
-                        });
-                    });
-                    
-                    transactions.sort((a, b) => new Date(b.date) - new Date(a.date));
-                    const recent = transactions.slice(0, 5);
-                    
-                    if (recent.length === 0) {
-                        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:30px;color:#999;">No transactions yet</td></tr>`;
-                    } else {
-                        tbody.innerHTML = recent.map(t => `
-                            <tr>
-                                <td>${new Date(t.date).toLocaleDateString()}</td>
-                                <td>${t.item}</td>
-                                <td><span class="badge ${t.badge}">${t.action}</span></td>
-                                <td>${t.user}</td>
-                                <td><span class="status ${t.status === 'Pending' ? 'pending' : 'completed'}">${t.status}</span></td>
-                            </tr>
-                        `).join('');
-                    }
-                } catch (error) {
-                    console.error("❌ Error:", error);
-                }
-            }
+// UPDATE TRANSACTIONS (FILTERED BY COMPANY)
+// ============================================
+async function updateTransactions() {
+    try {
+        const tbody = document.getElementById('transactionBody');
+        if (!tbody) return;
+        
+        const companyId = getCurrentCompanyId();
+        
+        // Get receiving records
+        const receivingSnapshot = await db.collection('stockReceiving')
+            .where('companyId', '==', companyId)
+            .orderBy('date', 'desc')
+            .limit(5)
+            .get();
+        
+        // Get issuing records
+        const issuingSnapshot = await db.collection('stockIssuing')
+            .where('companyId', '==', companyId)
+            .orderBy('date', 'desc')
+            .limit(5)
+            .get();
+        
+        const transactions = [];
+        receivingSnapshot.forEach(doc => {
+            const data = doc.data();
+            transactions.push({
+                date: data.date || new Date().toISOString(),
+                item: data.item || 'Item',
+                action: 'Received',
+                badge: 'badge-in',
+                user: data.receivedBy || 'System',
+                status: data.status || 'Completed'
+            });
+        });
+        
+        issuingSnapshot.forEach(doc => {
+            const data = doc.data();
+            transactions.push({
+                date: data.date || new Date().toISOString(),
+                item: data.item || 'Item',
+                action: 'Issued',
+                badge: 'badge-out',
+                user: data.issuedBy || 'System',
+                status: data.status || 'Pending'
+            });
+        });
+        
+        transactions.sort((a, b) => new Date(b.date) - new Date(a.date));
+        const recent = transactions.slice(0, 5);
+        
+        if (recent.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:30px;color:#999;">No transactions yet</td></tr>`;
+        } else {
+            tbody.innerHTML = recent.map(t => `
+                <tr>
+                    <td>${new Date(t.date).toLocaleDateString()}</td>
+                    <td>${t.item}</td>
+                    <td><span class="badge ${t.badge}">${t.action}</span></td>
+                    <td>${t.user}</td>
+                    <td><span class="status ${t.status === 'Pending' ? 'pending' : 'completed'}">${t.status}</span></td>
+                </tr>
+            `).join('');
+        }
+    } catch (error) {
+        console.error("❌ Error updating transactions:", error);
+        // If index is missing, try without orderBy
+        try {
+            const companyId = getCurrentCompanyId();
+            const receivingSnap = await db.collection('stockReceiving')
+                .where('companyId', '==', companyId)
+                .get();
+            const issuingSnap = await db.collection('stockIssuing')
+                .where('companyId', '==', companyId)
+                .get();
+            // ... similar code without orderBy
+        } catch (fallbackError) {
+            console.error("❌ Fallback error:", fallbackError);
+        }
+    }
+}
 
             // ============================================
-            // UPDATE ACTIVITIES
+            // UPDATE ACTIVITIES (FILTERED BY COMPANY)
             // ============================================
             async function updateActivities() {
                 try {
@@ -557,38 +769,7 @@
                     const activityCount = document.getElementById('activityCount');
                     if (!activityList) return;
                     
-                    const today = new Date();
-                    today.setHours(0, 0, 0, 0);
-                    
-                    const activities = [];
-                    
-                    const receiving = await db.collection('stockReceiving')
-                        .where('date', '>=', today.toISOString())
-                        .get();
-                    receiving.forEach(doc => {
-                        const data = doc.data();
-                        activities.push({
-                            text: `📥 ${data.item || 'Item'} received by ${data.receivedBy || 'System'}`,
-                            time: new Date(data.date).toLocaleTimeString()
-                        });
-                    });
-                    
-                    const issuing = await db.collection('stockIssuing')
-                        .where('date', '>=', today.toISOString())
-                        .get();
-                    issuing.forEach(doc => {
-                        const data = doc.data();
-                        activities.push({
-                            text: `📤 ${data.item || 'Item'} issued to ${data.issuedTo || 'Someone'}`,
-                            time: new Date(data.date).toLocaleTimeString()
-                        });
-                    });
-                    
-                    activities.sort((a, b) => {
-                        if (a.time > b.time) return -1;
-                        if (a.time < b.time) return 1;
-                        return 0;
-                    });
+                    const activities = await getActivitiesByCompany();
                     
                     if (activityCount) {
                         activityCount.textContent = `${activities.length} activities`;
@@ -608,12 +789,12 @@
                         `).join('');
                     }
                 } catch (error) {
-                    console.error('Error:', error);
+                    console.error('Error updating activities:', error);
                 }
             }
 
             // ============================================
-            // UPDATE ALERTS
+            // UPDATE ALERTS (FILTERED BY COMPANY)
             // ============================================
             async function updateAlerts() {
                 try {
@@ -667,7 +848,7 @@
                         alertCount.textContent = `${alerts.length} alerts`;
                     }
                 } catch (error) {
-                    console.error('Error:', error);
+                    console.error('Error updating alerts:', error);
                 }
             }
 
@@ -680,118 +861,23 @@
                 await updateTransactions();
                 await updateAlerts();
                 await updateActivities();
+                
+                // Update notification badge
+                const notifications = await getNotificationsByCompany();
+                const badge = document.getElementById('notifBadge');
+                if (badge) badge.textContent = notifications.length;
+                
                 console.log("✅ Dashboard fully loaded!");
             }, 500);
+
+            // ============================================
+            // VIEW ALL TRANSACTIONS
+            // ============================================
+            document.querySelector('.view-all')?.addEventListener('click', function(e) {
+                e.preventDefault();
+                alert('📋 View all transactions - coming soon!');
+            });
         });
     </script>
-    <script>
-
-</script>
-</script>
-<!-- ============================================ -->
-<!-- MOBILE MENU TOGGLE -->
-<!-- ============================================ -->
-<script>
-    // Mobile Menu Toggle
-    function initMobileMenu() {
-        const menuBtn = document.getElementById('mobileMenuBtn');
-        const sidebar = document.querySelector('.sidebar');
-        
-        if (!menuBtn || !sidebar) return;
-        
-        // Show menu button on mobile
-        if (window.innerWidth <= 768) {
-            menuBtn.style.display = 'block';
-        } else {
-            menuBtn.style.display = 'none';
-        }
-        
-        // Create overlay
-        let overlay = document.querySelector('.sidebar-overlay');
-        if (!overlay) {
-            overlay = document.createElement('div');
-            overlay.className = 'sidebar-overlay';
-            overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:999;display:none;';
-            document.body.appendChild(overlay);
-        }
-        
-        // Toggle menu
-        menuBtn.addEventListener('click', function(e) {
-            e.stopPropagation();
-            sidebar.classList.toggle('mobile-open');
-            overlay.classList.toggle('active');
-            if (overlay.classList.contains('active')) {
-                overlay.style.display = 'block';
-            } else {
-                overlay.style.display = 'none';
-            }
-        });
-        
-        // Close menu when clicking overlay
-        overlay.addEventListener('click', function() {
-            sidebar.classList.remove('mobile-open');
-            overlay.classList.remove('active');
-            overlay.style.display = 'none';
-        });
-        
-        // Close menu on window resize
-        window.addEventListener('resize', function() {
-            if (window.innerWidth > 768) {
-                sidebar.classList.remove('mobile-open');
-                overlay.classList.remove('active');
-                overlay.style.display = 'none';
-                menuBtn.style.display = 'none';
-            } else {
-                menuBtn.style.display = 'block';
-            }
-        });
-    }
-    
-    // Run when page loads
-    document.addEventListener('DOMContentLoaded', initMobileMenu);
-    <script>
-    // ============================================
-    // FORCE SIDEBAR VISIBLE - OVERRIDE EVERYTHING
-    // ============================================
-    document.addEventListener('DOMContentLoaded', function() {
-        // Get ALL sidebar items
-        var menuItems = document.querySelectorAll('.sidebar-nav .nav-item');
-        menuItems.forEach(function(item) {
-            // Remove ALL inline styles
-            item.style.display = '';
-            item.style.cssText = '';
-            // Force flex display
-            item.style.display = 'flex';
-        });
-        
-        // Force sidebar visible
-        var sidebar = document.querySelector('.sidebar');
-        if (sidebar) {
-            sidebar.style.display = '';
-            sidebar.style.cssText = '';
-            sidebar.style.display = 'flex';
-            sidebar.style.position = 'sticky';
-            sidebar.style.left = '0';
-            sidebar.style.top = '0';
-            sidebar.style.width = '240px';
-            sidebar.style.height = '100vh';
-            sidebar.style.background = 'linear-gradient(180deg, #667eea 0%, #764ba2 100%)';
-            sidebar.style.color = 'white';
-            sidebar.style.padding = '20px 0';
-            sidebar.style.flexDirection = 'column';
-            sidebar.style.flexShrink = '0';
-            sidebar.style.zIndex = '100';
-        }
-        
-        console.log("✅ Sidebar forced visible!");
-        
-        // Also show hamburger button on mobile
-        var menuBtn = document.querySelector('.mobile-menu-btn');
-        if (menuBtn) {
-            menuBtn.style.display = 'block';
-        }
-    });
-</script>
-</script>
 </body>
 </html>
