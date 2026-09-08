@@ -371,21 +371,26 @@ async function getProducts() {
             alert('✅ Excel exported!');
         }
 
-   function emailReport() {
+  function emailReport() {
     const content = document.getElementById('reportContent');
     if (!content) {
         alert('📄 Please generate a report first!');
         return;
     }
 
-    const recipientEmail = prompt('📧 Enter recipient email address:', 'manager@company.com');
-    if (!recipientEmail) return;
+    // Ask for recipient email
+    const recipientEmail = prompt('📧 Enter recipient email address:', '');
+    if (!recipientEmail) {
+        alert('❌ Email address is required!');
+        return;
+    }
 
+    // Get report details
     const titleEl = content.querySelector('.report-header h1');
     const reportType = titleEl ? titleEl.textContent : 'SmartStock Report';
     const generatedBy = JSON.parse(localStorage.getItem('currentUser'))?.name || 'System';
     
-    // Get summary from stats
+    // Get summary
     const statBoxes = content.querySelectorAll('.stat-box');
     let summary = '';
     statBoxes.forEach(box => {
@@ -393,6 +398,9 @@ async function getProducts() {
         if (text) summary += text + ' | ';
     });
     if (!summary) summary = 'Inventory report generated successfully.';
+
+    console.log('📧 Sending report to:', recipientEmail);
+    console.log('📧 Report type:', reportType);
 
     // Send email using EmailJS
     emailjs.send(
