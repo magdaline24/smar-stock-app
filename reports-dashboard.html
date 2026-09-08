@@ -372,34 +372,40 @@ async function getProducts() {
         }
 
    function emailReport() {
-    // Get the report content
     const content = document.getElementById('reportContent');
     if (!content) {
         alert('📄 Please generate a report first!');
         return;
     }
 
-    // Ask for recipient email
-    const recipientEmail = prompt('📧 Enter recipient email address:', 'wambuimagdalene79@gmail.com');
+    const recipientEmail = prompt('📧 Enter recipient email address:', 'manager@company.com');
     if (!recipientEmail) return;
 
-    // Get report details
     const titleEl = content.querySelector('.report-header h1');
     const reportType = titleEl ? titleEl.textContent : 'SmartStock Report';
     const generatedBy = JSON.parse(localStorage.getItem('currentUser'))?.name || 'System';
+    
+    // Get summary from stats
+    const statBoxes = content.querySelectorAll('.stat-box');
+    let summary = '';
+    statBoxes.forEach(box => {
+        const text = box.textContent.trim();
+        if (text) summary += text + ' | ';
+    });
+    if (!summary) summary = 'Inventory report generated successfully.';
 
-    console.log('📧 Sending report to:', recipientEmail);
-    console.log('📧 Report type:', reportType);
-
-    // Send email directly using EmailJS
+    // Send email using EmailJS
     emailjs.send(
         'service_qgairzm',
         'template_sotuau3',
         {
-            userName: 'Report Recipient',
-            userEmail: recipientEmail,
-            userRole: 'Report Viewer',
-            loginLink: 'https://smartstock-system.netlify.app/reports-dashboard.html'
+            recipientEmail: recipientEmail,
+            reportType: reportType,
+            generatedBy: generatedBy,
+            generatedDate: new Date().toLocaleString(),
+            companyName: 'SmartStock',
+            reportSummary: summary,
+            reportLink: 'https://smartstock-system.netlify.app/reports-dashboard.html'
         }
     )
     .then(function(response) {
@@ -407,11 +413,10 @@ async function getProducts() {
         alert('✅ Report sent successfully to ' + recipientEmail + '!');
     })
     .catch(function(error) {
-        console.error('❌ Email error DETAILS:', error);
-        alert('❌ Error sending report. Check console for details.\n\nError: ' + error.text);
+        console.error('❌ Email error:', error);
+        alert('❌ Error sending report: ' + error.text);
     });
 }
-
         document.addEventListener('DOMContentLoaded', function() {
             const today = new Date();
             const thirtyDaysAgo = new Date();
