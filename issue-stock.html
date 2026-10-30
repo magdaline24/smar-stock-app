@@ -9,17 +9,18 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
     <!-- PWA Support -->
-    <link rel="manifest" href="/manifest.json">
+    <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="images/icon-192.png">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#667eea">
     <script src="sw-register.js"></script>
     <script src="offline-sync.js"></script>
+    
     <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-    <script src="resend-functions.js"></script>
+    
     <script>
         const firebaseConfig = {
             apiKey: "AIzaSyAwcI_RRe3nRS8ZLxExsyyT4PDdtv5g4kg",
@@ -35,9 +36,19 @@
         const db = firebase.firestore();
         console.log("🔥 Firebase connected!");
 
+        // ===== GET CURRENT USER COMPANY =====
+        function getCurrentCompanyId() {
+            const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+            return currentUser?.companyId || 'default';
+        }
+
+        // ===== GET PRODUCTS =====
         async function getProducts() {
             try {
-                const snapshot = await db.collection('products').get();
+                const companyId = getCurrentCompanyId();
+                const snapshot = await db.collection('products')
+                    .where('companyId', '==', companyId)
+                    .get();
                 const products = [];
                 snapshot.forEach(doc => {
                     products.push({ id: doc.id, ...doc.data() });
@@ -49,10 +60,12 @@
             }
         }
 
-        async function updateProduct(productId, data) {
+        // ===== UPDATE PRODUCT QUANTITY =====
+        async function updateProductQuantity(productId, newQuantity) {
             try {
-                await db.collection('products').doc(productId).update(data);
-                console.log("✅ Product updated:", productId);
+                await db.collection('products').doc(productId).update({
+                    quantity: newQuantity
+                });
                 return true;
             } catch (error) {
                 console.error("❌ Error updating product:", error);
@@ -60,25 +73,26 @@
             }
         }
 
-        async function saveIssuing(data) {
+        // ===== SAVE ISSUING RECORD =====
+        async function saveIssuingRecord(data) {
             try {
                 const docRef = await db.collection('stockIssuing').add({
                     ...data,
                     date: new Date().toISOString(),
-                    status: 'Pending'
+                    status: 'Pending',
+                    companyId: getCurrentCompanyId()
                 });
-                console.log("✅ Issuing saved:", docRef.id);
                 return docRef.id;
             } catch (error) {
-                console.error("❌ Error saving issuing:", error);
+                console.error("❌ Error saving issuing record:", error);
                 return null;
             }
         }
     </script>
 </head>
 <body>
-    <div class="form-container" style="max-width: 100%; padding: 10px;">
-        <div class="form-box" style="max-width: 100%; padding: 15px;">
+    <div class="form-container" style="max-width:100%;padding:10px;">
+        <div class="form-box" style="max-width:100%;padding:15px;">
             <div class="form-header">
                 <a href="dashboard.html" class="back-btn">← Back</a>
                 <h1>📤 Issue Stock</h1>
@@ -86,9 +100,10 @@
             </div>
 
             <form id="issueForm">
+                <!-- Department Selection -->
                 <div class="form-group">
-                    <label>Department</label>
-                    <select id="issueDepartment" style="width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 8px; font-family: 'Poppins', sans-serif;">
+                    <label>Department *</label>
+                    <select id="issueDepartment" required style="width:100%;padding:10px;border:2px solid #e0e0e0;border-radius:8px;font-family:'Poppins',sans-serif;">
                         <option value="">Select department</option>
                         <option value="Kitchen">Kitchen</option>
                         <option value="Store">Store</option>
@@ -99,158 +114,162 @@
                     </select>
                 </div>
 
+                <!-- Request Number (Auto-Generated) -->
                 <div class="form-group">
                     <label>Request Number</label>
-                    <input type="text" id="requestNumber" placeholder="Enter request number" style="width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 8px; font-family: 'Poppins', sans-serif;">
+                    <input type="text" id="requestNumber" readonly placeholder="Auto-generated on department select" style="width:100%;padding:10px;border:2px solid #e0e0e0;border-radius:8px;font-family:'Poppins',sans-serif;background:#f5f5f5;cursor:not-allowed;">
+                    <p style="font-size:0.7rem;color:#888;margin-top:3px;">Automatically generated based on department</p>
                 </div>
 
+                <!-- Product Selection -->
                 <div class="form-group">
-                    <label>Product</label>
-                    <select id="issueProduct" style="width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 8px; font-family: 'Poppins', sans-serif;">
+                    <label>Product *</label>
+                    <select id="issueProduct" required style="width:100%;padding:10px;border:2px solid #e0e0e0;border-radius:8px;font-family:'Poppins',sans-serif;">
                         <option value="">Select product</option>
+                        <!-- Populated by JavaScript -->
                     </select>
                 </div>
 
+                <!-- Quantity -->
                 <div class="form-row">
                     <div class="form-group">
-                        <label>Quantity Issued</label>
-                        <input type="number" id="issueQty" placeholder="0" min="1" style="width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 8px; font-family: 'Poppins', sans-serif;">
+                        <label>Quantity Issued *</label>
+                        <input type="number" id="issueQty" placeholder="0" min="1" required style="width:100%;padding:10px;border:2px solid #e0e0e0;border-radius:8px;font-family:'Poppins',sans-serif;">
                     </div>
                     <div class="form-group">
-                        <label>Approved By</label>
-                        <input type="text" id="approvedBy" placeholder="Approver name" style="width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 8px; font-family: 'Poppins', sans-serif;">
+                        <label>Approved By *</label>
+                        <input type="text" id="approvedBy" placeholder="Approver name" required style="width:100%;padding:10px;border:2px solid #e0e0e0;border-radius:8px;font-family:'Poppins',sans-serif;">
                     </div>
                 </div>
 
+                <!-- Remarks -->
                 <div class="form-group">
                     <label>Remarks</label>
-                    <input type="text" id="issueRemarks" placeholder="Add remarks..." style="width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 8px; font-family: 'Poppins', sans-serif;">
+                    <input type="text" id="issueRemarks" placeholder="Add remarks..." style="width:100%;padding:10px;border:2px solid #e0e0e0;border-radius:8px;font-family:'Poppins',sans-serif;">
                 </div>
 
-                <button type="submit" style="width: 100%; padding: 12px; background: #667eea; color: white; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; font-family: 'Poppins', sans-serif;">✅ Submit Issue</button>
+                <button type="submit" class="btn-submit" style="width:100%;padding:14px;background:#667eea;color:white;border:none;border-radius:10px;font-weight:600;cursor:pointer;font-family:'Poppins',sans-serif;">✅ Submit Issue</button>
             </form>
         </div>
     </div>
 
     <script>
-<script>
-    let allProducts = [];
+        // ============================================
+        // AUTO-GENERATE REQUEST NUMBER
+        // ============================================
+        document.getElementById('issueDepartment').addEventListener('change', function() {
+            const dept = this.value;
+            const reqInput = document.getElementById('requestNumber');
+            
+            if (dept === "") {
+                reqInput.value = "";
+                return;
+            }
 
-    // ===== GET PRODUCTS FROM FIREBASE =====
-    async function getProducts() {
-        try {
-            const currentUser = JSON.parse(localStorage.getItem('currentUser'));
-            const companyId = currentUser?.companyId || 'default';
-            const snapshot = await db.collection('products')
-                .where('companyId', '==', companyId)
-                .get();
-            const products = [];
-            snapshot.forEach(doc => {
-                products.push({ id: doc.id, ...doc.data() });
-            });
-            return products;
-        } catch (error) {
-            console.error("❌ Error:", error);
-            return [];
-        }
-    }
+            // Get the first 3 letters of the department (e.g., KIT for Kitchen)
+            const deptCode = dept.substring(0, 3).toUpperCase();
+            
+            // Generate a random 4-digit number
+            const randomNum = Math.floor(1000 + Math.random() * 9000);
+            
+            // Set the auto-generated request number
+            reqInput.value = `REQ-${deptCode}-${randomNum}`;
+        });
 
-    // ===== UPDATE PRODUCT QUANTITY =====
-    async function updateProduct(productId, data) {
-        try {
-            await db.collection('products').doc(productId).update(data);
-            console.log("✅ Product updated:", productId);
-            return true;
-        } catch (error) {
-            console.error("❌ Error updating product:", error);
-            return false;
-        }
-    }
-
-    // ===== SAVE ISSUING =====
-    async function saveIssuing(data) {
-        try {
-            const docRef = await db.collection('stockIssuing').add({
-                ...data,
-                date: new Date().toISOString(),
-                status: 'Pending'
-            });
-            console.log("✅ Issuing saved:", docRef.id);
-            return docRef.id;
-        } catch (error) {
-            console.error("❌ Error saving issuing:", error);
-            return null;
-        }
-    }
-
-    // ===== LOAD PRODUCTS ON PAGE LOAD =====
-    document.addEventListener('DOMContentLoaded', async function() {
-        // Load products into dropdown
-        try {
-            allProducts = await getProducts();
+        // ============================================
+        // LOAD PRODUCTS ON PAGE LOAD
+        // ============================================
+        document.addEventListener('DOMContentLoaded', async function() {
+            const products = await getProducts();
             const select = document.getElementById('issueProduct');
+            
             if (select) {
                 select.innerHTML = '<option value="">Select product</option>';
-                allProducts.forEach(product => {
+                products.forEach(p => {
                     const option = document.createElement('option');
-                    option.value = product.id;
-                    option.textContent = `${product.name} (${product.quantity || 0} in stock)`;
+                    option.value = p.id;
+                    option.textContent = `${p.name} (${p.quantity || 0} in stock)`;
                     select.appendChild(option);
                 });
             }
-        } catch (error) {
-            console.error('Error loading products:', error);
-        }
-    });
-
-    // ===== FORM SUBMIT =====
-    document.getElementById('issueForm').addEventListener('submit', async function(e) {
-        e.preventDefault();
-
-        const department = document.getElementById('issueDepartment').value;
-        const requestNumber = document.getElementById('requestNumber').value;
-        const productId = document.getElementById('issueProduct').value;
-        const qty = parseInt(document.getElementById('issueQty').value);
-        const approvedBy = document.getElementById('approvedBy').value;
-        const remarks = document.getElementById('issueRemarks').value;
-
-        if (!department || !productId || !qty || !approvedBy) {
-            alert('❌ Please fill in all required fields');
-            return;
-        }
-
-        const product = allProducts.find(p => p.id === productId);
-        if (!product) {
-            alert('❌ Product not found');
-            return;
-        }
-
-        if (qty > (product.quantity || 0)) {
-            alert(`❌ Not enough stock! Available: ${product.quantity || 0}`);
-            return;
-        }
-
-        // Save issuing record
-        await saveIssuing({
-            department: department,
-            requestNumber: requestNumber,
-            product: product.name,
-            productId: productId,
-            quantity: qty,
-            approvedBy: approvedBy,
-            remarks: remarks,
-            issuedBy: JSON.parse(localStorage.getItem('currentUser'))?.name || 'System'
         });
 
-        // Update product quantity
-        const newQty = (product.quantity || 0) - qty;
-        await updateProduct(productId, { quantity: newQty });
+        // ============================================
+        // FORM SUBMIT - ISSUE STOCK & DEDUCT
+        // ============================================
+        document.getElementById('issueForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
 
-        alert(`✅ Stock issued successfully!\n\n📦 ${product.name}\n📊 ${qty} units\n🏢 ${department}\n👤 Approved by: ${approvedBy}`);
-        this.reset();
-        location.reload();
-    });
-</script>
-</script>
+            const department = document.getElementById('issueDepartment').value;
+            const requestNumber = document.getElementById('requestNumber').value;
+            const productId = document.getElementById('issueProduct').value;
+            const qty = parseInt(document.getElementById('issueQty').value);
+            const approvedBy = document.getElementById('approvedBy').value;
+            const remarks = document.getElementById('issueRemarks').value;
+
+            // Validation
+            if (!department || !productId || !qty || !approvedBy) {
+                alert('❌ Please fill in all required fields');
+                return;
+            }
+
+            if (!requestNumber) {
+                alert('❌ Request Number failed to generate. Please select the department again.');
+                return;
+            }
+
+            // Get product details
+            const products = await getProducts();
+            const product = products.find(p => p.id === productId);
+
+            if (!product) {
+                alert('❌ Product not found');
+                return;
+            }
+
+            if (qty > (product.quantity || 0)) {
+                alert(`❌ Not enough stock! Available: ${product.quantity || 0}`);
+                return;
+            }
+
+            // 1. Save the issuing record
+            const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+            const issuingId = await saveIssuingRecord({
+                department: department,
+                requestNumber: requestNumber,
+                product: product.name,
+                productId: productId,
+                quantity: qty,
+                approvedBy: approvedBy,
+                remarks: remarks,
+                issuedBy: currentUser?.name || 'System'
+            });
+
+            if (issuingId) {
+                // 2. Deduct stock from the inventory
+                const newQty = (product.quantity || 0) - qty;
+                await updateProductQuantity(productId, newQty);
+
+                alert(`✅ Stock Issued successfully!\n\n🏢 Department: ${department}\n📄 Request #: ${requestNumber}\n📦 Product: ${product.name}\n📊 Quantity: ${qty}\n📉 New Stock Level: ${newQty}`);
+                
+                this.reset();
+                document.getElementById('requestNumber').value = '';
+                
+                // Reload products dropdown to reflect new stock
+                const select = document.getElementById('issueProduct');
+                select.innerHTML = '<option value="">Select product</option>';
+                const updatedProducts = await getProducts();
+                updatedProducts.forEach(p => {
+                    const option = document.createElement('option');
+                    option.value = p.id;
+                    option.textContent = `${p.name} (${p.quantity || 0} in stock)`;
+                    select.appendChild(option);
+                });
+
+            } else {
+                alert('❌ Error issuing stock. Please try again.');
+            }
+        });
+    </script>
 </body>
 </html>
