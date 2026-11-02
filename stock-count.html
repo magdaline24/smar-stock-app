@@ -65,7 +65,7 @@
         }
 
         // ============================================
-        // GET PREVIOUS COUNTS
+        // GET PREVIOUS STOCK COUNTS
         // ============================================
         async function getStockCounts() {
             try {
@@ -73,7 +73,6 @@
                 const snapshot = await db.collection('stockCounts')
                     .where('companyId', '==', companyId)
                     .orderBy('date', 'desc')
-                    .limit(15)
                     .get();
                 const counts = [];
                 snapshot.forEach(doc => {
@@ -81,272 +80,228 @@
                 });
                 return counts;
             } catch (error) {
-                console.error("❌ Error getting counts:", error);
+                console.error("❌ Error getting stock counts:", error);
                 return [];
             }
         }
 
         // ============================================
-        // UPDATE PRODUCT QUANTITY (THE SYNC PART!)
+        // SAVE STOCK COUNT & UPDATE INVENTORY
         // ============================================
-        async function updateProductQuantity(productId, newQuantity) {
+        async function saveStockCount(countData, productId) {
             try {
-                await db.collection('products').doc(productId).update({
-                    quantity: newQuantity
-                });
-                console.log("✅ Inventory synced for product:", productId, "New Qty:", newQuantity);
-                return true;
-            } catch (error) {
-                console.error("❌ Error updating inventory:", error);
-                return false;
-            }
-        }
-
-        // ============================================
-        // SAVE STOCK COUNT
-        // ============================================
-        async function saveStockCount(data) {
-            try {
-                const companyId = getCurrentCompanyId();
+                // 1. Save the count record
                 const docRef = await db.collection('stockCounts').add({
-                    ...data,
-                    companyId: companyId,
+                    ...countData,
+                    companyId: getCurrentCompanyId(),
                     date: new Date().toISOString()
                 });
-                console.log("✅ Stock count saved:", docRef.id);
+
+                // 2. UPDATE THE MASTER INVENTORY
+                // This is the crucial part: sync the physical count to the database
+                await db.collection('products').doc(productId).update({
+                    quantity: countData.actualQty
+                });
+
+                console.log("✅ Stock count saved and inventory synced:", docRef.id);
                 return docRef.id;
             } catch (error) {
-                console.error("❌ Error saving count:", error);
+                console.error("❌ Error saving stock count:", error);
                 return null;
             }
         }
     </script>
 </head>
 <body>
-    <div class="form-container">
-        <div class="form-box" style="max-width: 600px;">
+    <div class="form-container" style="max-width:100%;padding:10px;">
+        <div class="form-box" style="max-width:100%;padding:15px;">
             <div class="form-header">
                 <a href="dashboard.html" class="back-btn">← Back to Dashboard</a>
                 <h1>📋 Stock Count</h1>
-                <p>Count and synchronize your inventory</p>
+                <p>Count and sync your inventory</p>
             </div>
 
-            <!-- ===== NEW STOCK COUNT FORM ===== -->
-            <div style="background: #f8f9ff; border-radius: 12px; padding: 20px; margin-bottom: 25px; border: 1px solid #e0e0e0;">
-                <h3 style="margin: 0 0 15px; font-size: 1.1rem; color: #333;">📝 New Count</h3>
+            <!-- New Stock Count Form -->
+            <div style="background: #f8f9ff; border-radius: 12px; padding: 15px; margin-bottom: 15px;">
+                <h3 style="margin: 0 0 10px;">📝 New Stock Count</h3>
                 
-                <form id="stockCountForm">
+                <div class="form-group">
+                    <label>Select Item</label>
+                    <select id="countItem" style="width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 8px; font-family: 'Poppins', sans-serif;">
+                        <option value="">Select an item</option>
+                    </select>
+                </div>
+                
+                <div class="form-row">
                     <div class="form-group">
-                        <label>Search Item *</label>
-                        <select id="countItem" required style="width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 8px; font-family: 'Poppins', sans-serif;">
-                            <option value="">Select an item</option>
-                            <!-- Products loaded here -->
-                        </select>
+                        <label>Expected Quantity (System)</label>
+                        <input type="number" id="expectedQty" placeholder="0" readonly style="width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 8px; font-family: 'Poppins', sans-serif; background: #e9ecef;">
                     </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>Expected Quantity</label>
-                            <input type="number" id="expectedQty" placeholder="0" readonly style="background: #e9ecef; cursor: not-allowed;">
-                        </div>
-                        <div class="form-group">
-                            <label>Actual Count *</label>
-                            <input type="number" id="actualQty" placeholder="0" min="0" required>
-                        </div>
-                    </div>
-
                     <div class="form-group">
-                        <label>Remarks</label>
-                        <input type="text" id="countRemarks" placeholder="e.g., 2 damaged, 1 expired..." style="width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 8px; font-family: 'Poppins', sans-serif;">
+                        <label>Actual Count (Physical)</label>
+                        <input type="number" id="actualQty" placeholder="0" style="width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 8px; font-family: 'Poppins', sans-serif;">
                     </div>
-
-                    <div class="form-group">
-                        <label>Counted By *</label>
-                        <input type="text" id="countedBy" placeholder="Your name" required style="width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 8px; font-family: 'Poppins', sans-serif;">
-                    </div>
-
-                    <button type="submit" class="btn-submit">💾 Save & Sync Count</button>
-                </form>
+                </div>
+                
+                <div class="form-group">
+                    <label>Remarks</label>
+                    <input type="text" id="countRemarks" placeholder="Add remarks..." style="width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 8px; font-family: 'Poppins', sans-serif;">
+                </div>
+                
+                <div class="form-group">
+                    <label>Counted By</label>
+                    <input type="text" id="countedBy" placeholder="Your name" style="width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 8px; font-family: 'Poppins', sans-serif;">
+                </div>
+                
+                <button id="saveCountBtn" style="width: 100%; padding: 12px; background: #667eea; color: white; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; font-family: 'Poppins', sans-serif;">💾 Save Count & Update Inventory</button>
             </div>
 
-            <!-- ===== PREVIOUS COUNTS ===== -->
+            <!-- Previous Counts -->
             <div>
-                <h3 style="margin: 0 0 15px; font-size: 1.1rem; color: #333;">📊 Previous Counts</h3>
-                <div id="previousCounts" style="max-height: 350px; overflow-y: auto;">
-                    <div style="text-align:center;padding:20px;color:#999;">Loading history...</div>
+                <h3 style="margin: 0 0 10px;">📊 Previous Counts</h3>
+                <div id="previousCounts" style="max-height: 400px; overflow-y: auto;">
+                    <!-- Counts will be loaded here -->
                 </div>
             </div>
         </div>
     </div>
 
     <style>
-        .count-card {
+        .count-item {
             background: white;
-            border-radius: 10px;
-            padding: 15px;
-            margin-bottom: 10px;
-            border: 1px solid #e0e0e0;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.02);
-        }
-        .count-card h4 {
-            margin: 0 0 5px;
-            font-size: 1rem;
-            color: #333;
-        }
-        .count-details {
-            font-size: 0.85rem;
-            color: #666;
-            display: flex;
-            gap: 15px;
-            flex-wrap: wrap;
+            border-radius: 8px;
+            padding: 12px;
             margin-bottom: 8px;
-        }
-        .count-footer {
-            font-size: 0.75rem;
-            color: #999;
-            border-top: 1px dashed #eee;
-            padding-top: 8px;
-            margin-top: 8px;
+            border: 1px solid #f0f0f0;
             display: flex;
             justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
         }
-        .variance-badge {
+        .count-item .count-info {
+            flex: 1;
+        }
+        .count-item .count-info strong {
+            display: block;
+            font-size: 1rem;
+            color: #333;
+            margin-bottom: 4px;
+        }
+        .count-item .count-info span {
+            font-size: 0.8rem;
+            color: #666;
+            display: block;
+        }
+        .count-item .count-status {
             font-weight: 600;
-            padding: 2px 8px;
-            border-radius: 4px;
-            font-size: 0.75rem;
+            font-size: 0.85rem;
+            padding: 4px 10px;
+            border-radius: 20px;
         }
-        .variance-match { background: #dcfce7; color: #22c55e; }
-        .variance-missing { background: #fee2e2; color: #ef4444; }
-        .variance-extra { background: #eff6ff; color: #3b82f6; }
+        .count-item .count-status.match {
+            background: #dcfce7;
+            color: #22c55e;
+        }
+        .count-item .count-status.mismatch {
+            background: #fee2e2;
+            color: #ef4444;
+        }
     </style>
 
     <script>
         let allProducts = [];
 
         // ============================================
-        // INITIALIZE PAGE
+        // LOAD PRODUCTS INTO DROPDOWN
         // ============================================
-        document.addEventListener('DOMContentLoaded', async function() {
-            // 1. Load Products
+        async function loadProducts() {
             allProducts = await getProducts();
             const select = document.getElementById('countItem');
-            
-            if (select) {
-                select.innerHTML = '<option value="">Select an item to count...</option>';
-                allProducts.forEach(product => {
-                    const option = document.createElement('option');
-                    option.value = product.id;
-                    option.textContent = `${product.name} (System: ${product.quantity || 0})`;
-                    select.appendChild(option);
-                });
-            }
-
-            // 2. Load Previous Counts
-            await loadPreviousCounts();
-        });
+            select.innerHTML = '<option value="">Select an item</option>' +
+                allProducts.map(p => `<option value="${p.id}">${p.name} (System Qty: ${p.quantity || 0})</option>`).join('');
+        }
 
         // ============================================
-        // AUTO-FILL EXPECTED QUANTITY
+        // AUTO-FILL EXPECTED QUANTITY ON SELECT
         // ============================================
         document.getElementById('countItem').addEventListener('change', function() {
-            const productId = this.value;
-            const product = allProducts.find(p => p.id === productId);
-            
-            const expectedField = document.getElementById('expectedQty');
-            const actualField = document.getElementById('actualQty');
-
+            const product = allProducts.find(p => p.id === this.value);
             if (product) {
-                expectedField.value = product.quantity || 0;
-                actualField.value = ''; // clear actual field so they type fresh
-                actualField.focus();
+                document.getElementById('expectedQty').value = product.quantity || 0;
             } else {
-                expectedField.value = '';
-                actualField.value = '';
+                document.getElementById('expectedQty').value = '';
             }
         });
 
         // ============================================
-        // HANDLE FORM SUBMISSION (THE SYNC)
+        // SAVE COUNT HANDLER
         // ============================================
-        document.getElementById('stockCountForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-
+        document.getElementById('saveCountBtn').addEventListener('click', async function() {
             const productId = document.getElementById('countItem').value;
             const expected = parseInt(document.getElementById('expectedQty').value) || 0;
-            const actual = parseInt(document.getElementById('actualQty').value);
-            const remarks = document.getElementById('countRemarks').value || 'N/A';
-            const countedBy = document.getElementById('countedBy').value;
+            const actual = parseInt(document.getElementById('actualQty').value) || 0;
+            const remarks = document.getElementById('countRemarks').value || '';
+            const countedBy = document.getElementById('countedBy').value || 'Anonymous';
 
-            // Validation
             if (!productId) {
                 alert('❌ Please select an item');
                 return;
             }
-            if (isNaN(actual) || actual < 0) {
-                alert('❌ Please enter a valid actual count');
-                return;
-            }
-            if (!countedBy) {
-                alert('❌ Please enter who is counting');
+            if (actual === 0 && document.getElementById('actualQty').value === '') {
+                alert('❌ Please enter the actual count');
                 return;
             }
 
             const product = allProducts.find(p => p.id === productId);
             const variance = actual - expected;
+            let status = '';
             
-            let status = 'Match';
-            if (variance < 0) status = `${variance} missing`;
-            if (variance > 0) status = `+${variance} extra`;
+            if (variance === 0) {
+                status = '✅ Match';
+            } else if (variance > 0) {
+                status = `⚠️ +${variance} extra`;
+            } else {
+                status = `⚠️ ${variance} missing`;
+            }
 
-            // 1. Save the count log
-            const countId = await saveStockCount({
+            const confirmMsg = variance === 0 
+                ? `✅ Count matches system. Update inventory to ${actual}?`
+                : `⚠️ Variance detected (${status}). This will OVERWRITE the system quantity to ${actual}. Proceed?`;
+
+            if (!confirm(confirmMsg)) return;
+
+            // Save and Update
+            const result = await saveStockCount({
                 item: product.name,
                 productId: productId,
                 expectedQty: expected,
                 actualQty: actual,
                 variance: variance,
-                status: status,
                 remarks: remarks,
-                countedBy: countedBy
-            });
+                countedBy: countedBy,
+                status: status
+            }, productId);
 
-            if (countId) {
-                // 2. SYNC THE INVENTORY! Update the main product quantity to match actual
-                await updateProductQuantity(productId, actual);
-
-                // 3. Show success and explain what happened
-                let successMsg = `✅ Count Saved & Inventory Synced!\n\n📦 ${product.name}\n📊 System: ${expected} ➡️ Actual: ${actual}\n`;
-                if (variance < 0) successMsg += `\n⚠️ ${Math.abs(variance)} items were marked as missing. Inventory updated to ${actual}.`;
-                if (variance > 0) successMsg += `\n📈 ${variance} extra items found. Inventory updated to ${actual}.`;
-                if (variance === 0) successMsg += `\n✅ Inventory perfectly matches!`;
-
-                alert(successMsg);
-
-                // 4. Reset form and reload UI
-                this.reset();
-                document.getElementById('expectedQty').value = '';
+            if (result) {
+                alert(`✅ Stock count saved!\n\n🔄 Inventory updated to: ${actual} units`);
                 
-                // Reload products with new quantities
-                allProducts = await getProducts();
-                const select = document.getElementById('countItem');
-                select.innerHTML = '<option value="">Select an item to count...</option>';
-                allProducts.forEach(p => {
-                    const opt = document.createElement('option');
-                    opt.value = p.id;
-                    opt.textContent = `${p.name} (System: ${p.quantity || 0})`;
-                    select.appendChild(opt);
-                });
-
-                // Reload history
+                // Reset form
+                document.getElementById('countItem').value = '';
+                document.getElementById('expectedQty').value = '';
+                document.getElementById('actualQty').value = '';
+                document.getElementById('countRemarks').value = '';
+                document.getElementById('countedBy').value = '';
+                
+                // Reload data
+                await loadProducts();
                 await loadPreviousCounts();
             } else {
-                alert('❌ Error saving stock count. Please try again.');
+                alert('❌ Error saving stock count');
             }
         });
 
         // ============================================
-        // LOAD PREVIOUS COUNTS
+        // LOAD PREVIOUS COUNTS (UI)
         // ============================================
         async function loadPreviousCounts() {
             const counts = await getStockCounts();
@@ -354,31 +309,30 @@
             
             if (counts.length === 0) {
                 container.innerHTML = '<div style="text-align:center;padding:20px;color:#999;">No previous counts</div>';
-                return;
-            }
-
-            container.innerHTML = counts.map(c => {
-                let badgeClass = 'variance-match';
-                if (c.variance < 0) badgeClass = 'variance-missing';
-                if (c.variance > 0) badgeClass = 'variance-extra';
-
-                return `
-                    <div class="count-card">
-                        <h4>${c.item}</h4>
-                        <div class="count-details">
-                            <span>System: <strong>${c.expectedQty}</strong></span>
-                            <span>Actual: <strong>${c.actualQty}</strong></span>
-                            <span class="variance-badge ${badgeClass}">${c.status}</span>
+            } else {
+                container.innerHTML = counts.slice(0, 10).map(c => `
+                    <div class="count-item">
+                        <div class="count-info">
+                            <strong>${c.item || 'N/A'}</strong>
+                            <span>Expected: ${c.expectedQty || 0} | Actual: ${c.actualQty || 0}</span>
+                            <span>By: ${c.countedBy || 'Anonymous'} | ${new Date(c.date).toLocaleDateString()}</span>
+                            ${c.remarks ? `<span>Note: ${c.remarks}</span>` : ''}
                         </div>
-                        ${c.remarks && c.remarks !== 'N/A' ? `<div style="font-size:0.8rem;color:#666;margin-bottom:5px;">📝 ${c.remarks}</div>` : ''}
-                        <div class="count-footer">
-                            <span>👤 ${c.countedBy}</span>
-                            <span>📅 ${new Date(c.date).toLocaleDateString()}</span>
+                        <div class="count-status ${c.variance === 0 ? 'match' : 'mismatch'}">
+                            ${c.status || 'Mismatch'}
                         </div>
                     </div>
-                `;
-            }).join('');
+                `).join('');
+            }
         }
+
+        // ============================================
+        // INIT PAGE
+        // ============================================
+        document.addEventListener('DOMContentLoaded', async function() {
+            await loadProducts();
+            await loadPreviousCounts();
+        });
     </script>
 </body>
 </html>
