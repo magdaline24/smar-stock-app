@@ -8,11 +8,9 @@
     <link rel="stylesheet" href="css/style.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
-    <!-- PWA Support -->
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="images/icon-192.png">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#667eea">
     <script src="sw-register.js"></script>
     <script src="offline-sync.js"></script>
@@ -28,87 +26,47 @@
             projectId: "smart-stock-app-da50f",
             storageBucket: "smart-stock-app-da50f.appspot.com",
             messagingSenderId: "512981075308",
-            appId: "1:512981075308:web:491c04288f19aa26775f49",
-            measurementId: "G-QPCK6Q566V"
+            appId: "1:512981075308:web:491c04288f19aa26775f49"
         };
 
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
-        console.log("🔥 Firebase connected!");
 
-        // ============================================
-        // GET CURRENT COMPANY ID
-        // ============================================
+        // Get User Company
         function getCurrentCompanyId() {
             const currentUser = JSON.parse(localStorage.getItem('currentUser'));
             return currentUser?.companyId || 'default';
         }
 
-        // ============================================
-        // GET PRODUCTS (FILTERED BY COMPANY)
-        // ============================================
+        // Get Products
         async function getProducts() {
-            try {
-                const companyId = getCurrentCompanyId();
-                const snapshot = await db.collection('products')
-                    .where('companyId', '==', companyId)
-                    .get();
-                const products = [];
-                snapshot.forEach(doc => {
-                    products.push({ id: doc.id, ...doc.data() });
-                });
-                return products;
-            } catch (error) {
-                console.error("❌ Error getting products:", error);
-                return [];
-            }
+            const companyId = getCurrentCompanyId();
+            const snapshot = await db.collection('products').where('companyId', '==', companyId).get();
+            const products = [];
+            snapshot.forEach(doc => products.push({ id: doc.id, ...doc.data() }));
+            return products;
         }
 
-        // ============================================
-        // GET PREVIOUS STOCK COUNTS
-        // ============================================
+        // Update Product Qty
+        async function updateProductQty(productId, newQty) {
+            await db.collection('products').doc(productId).update({ quantity: newQty });
+        }
+
+        // Get Previous Counts (NO ORDER BY - FIXED ERROR)
         async function getStockCounts() {
-            try {
-                const companyId = getCurrentCompanyId();
-                const snapshot = await db.collection('stockCounts')
-                    .where('companyId', '==', companyId)
-                    .orderBy('date', 'desc')
-                    .get();
-                const counts = [];
-                snapshot.forEach(doc => {
-                    counts.push({ id: doc.id, ...doc.data() });
-                });
-                return counts;
-            } catch (error) {
-                console.error("❌ Error getting stock counts:", error);
-                return [];
-            }
-        }
-
-        // ============================================
-        // SAVE STOCK COUNT & UPDATE INVENTORY
-        // ============================================
-        async function saveStockCount(countData, productId) {
-            try {
-                // 1. Save the count record
-                const docRef = await db.collection('stockCounts').add({
-                    ...countData,
-                    companyId: getCurrentCompanyId(),
-                    date: new Date().toISOString()
-                });
-
-                // 2. UPDATE THE MASTER INVENTORY
-                // This is the crucial part: sync the physical count to the database
-                await db.collection('products').doc(productId).update({
-                    quantity: countData.actualQty
-                });
-
-                console.log("✅ Stock count saved and inventory synced:", docRef.id);
-                return docRef.id;
-            } catch (error) {
-                console.error("❌ Error saving stock count:", error);
-                return null;
-            }
+            const companyId = getCurrentCompanyId();
+            // We removed .orderBy('date', 'desc') to prevent the Firebase Index error
+            const snapshot = await db.collection('stockCounts')
+                .where('companyId', '==', companyId)
+                .get();
+            
+            const counts = [];
+            snapshot.forEach(doc => counts.push({ id: doc.id, ...doc.data() }));
+            
+            // Sort manually in JavaScript (Newest first)
+            counts.sort((a, b) => new Date(b.date) - new Date(a.date));
+            
+            return counts;
         }
     </script>
 </head>
@@ -116,43 +74,43 @@
     <div class="form-container" style="max-width:100%;padding:10px;">
         <div class="form-box" style="max-width:100%;padding:15px;">
             <div class="form-header">
-                <a href="dashboard.html" class="back-btn">← Back to Dashboard</a>
+                <a href="dashboard.html" class="back-btn">← Back</a>
                 <h1>📋 Stock Count</h1>
-                <p>Count and sync your inventory</p>
+                <p>Count and verify your inventory</p>
             </div>
 
-            <!-- New Stock Count Form -->
+            <!-- New Stock Count -->
             <div style="background: #f8f9ff; border-radius: 12px; padding: 15px; margin-bottom: 15px;">
                 <h3 style="margin: 0 0 10px;">📝 New Stock Count</h3>
                 
                 <div class="form-group">
-                    <label>Select Item</label>
+                    <label>Search Item</label>
                     <select id="countItem" style="width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 8px; font-family: 'Poppins', sans-serif;">
                         <option value="">Select an item</option>
                     </select>
                 </div>
-                
+
                 <div class="form-row">
                     <div class="form-group">
-                        <label>Expected Quantity (System)</label>
-                        <input type="number" id="expectedQty" placeholder="0" readonly style="width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 8px; font-family: 'Poppins', sans-serif; background: #e9ecef;">
+                        <label>Expected Quantity</label>
+                        <input type="number" id="expectedQty" readonly style="width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 8px; background:#f0f0f0;">
                     </div>
                     <div class="form-group">
-                        <label>Actual Count (Physical)</label>
-                        <input type="number" id="actualQty" placeholder="0" style="width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 8px; font-family: 'Poppins', sans-serif;">
+                        <label>Actual Count</label>
+                        <input type="number" id="actualQty" placeholder="0" style="width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 8px;">
                     </div>
                 </div>
-                
+
                 <div class="form-group">
                     <label>Remarks</label>
-                    <input type="text" id="countRemarks" placeholder="Add remarks..." style="width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 8px; font-family: 'Poppins', sans-serif;">
+                    <input type="text" id="countRemarks" placeholder="Add remarks..." style="width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 8px;">
                 </div>
-                
+
                 <div class="form-group">
                     <label>Counted By</label>
-                    <input type="text" id="countedBy" placeholder="Your name" style="width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 8px; font-family: 'Poppins', sans-serif;">
+                    <input type="text" id="countedBy" placeholder="Your name" style="width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 8px;">
                 </div>
-                
+
                 <button id="saveCountBtn" style="width: 100%; padding: 12px; background: #667eea; color: white; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; font-family: 'Poppins', sans-serif;">💾 Save Count & Update Inventory</button>
             </div>
 
@@ -160,7 +118,7 @@
             <div>
                 <h3 style="margin: 0 0 10px;">📊 Previous Counts</h3>
                 <div id="previousCounts" style="max-height: 400px; overflow-y: auto;">
-                    <!-- Counts will be loaded here -->
+                    <!-- Counts load here -->
                 </div>
             </div>
         </div>
@@ -169,170 +127,133 @@
     <style>
         .count-item {
             background: white;
-            border-radius: 8px;
-            padding: 12px;
-            margin-bottom: 8px;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 10px;
             border: 1px solid #f0f0f0;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+        }
+        .count-item .item-name {
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: #333;
+            margin-bottom: 5px;
         }
         .count-item .count-info {
-            flex: 1;
-        }
-        .count-item .count-info strong {
-            display: block;
-            font-size: 1rem;
-            color: #333;
-            margin-bottom: 4px;
-        }
-        .count-item .count-info span {
-            font-size: 0.8rem;
-            color: #666;
-            display: block;
-        }
-        .count-item .count-status {
-            font-weight: 600;
             font-size: 0.85rem;
-            padding: 4px 10px;
-            border-radius: 20px;
+            color: #666;
+            margin-bottom: 5px;
         }
-        .count-item .count-status.match {
-            background: #dcfce7;
-            color: #22c55e;
+        .count-item .variance {
+            font-weight: 600;
+            font-size: 0.9rem;
         }
-        .count-item .count-status.mismatch {
-            background: #fee2e2;
-            color: #ef4444;
-        }
+        .variance.match { color: #22c55e; }
+        .variance.missing { color: #ef4444; }
+        .variance.extra { color: #f59e0b; }
     </style>
 
     <script>
         let allProducts = [];
 
-        // ============================================
-        // LOAD PRODUCTS INTO DROPDOWN
-        // ============================================
-        async function loadProducts() {
+        // Load Data on Start
+        document.addEventListener('DOMContentLoaded', async () => {
             allProducts = await getProducts();
+            
+            // Populate Dropdown
             const select = document.getElementById('countItem');
-            select.innerHTML = '<option value="">Select an item</option>' +
-                allProducts.map(p => `<option value="${p.id}">${p.name} (System Qty: ${p.quantity || 0})</option>`).join('');
-        }
+            allProducts.forEach(p => {
+                select.innerHTML += `<option value="${p.id}" data-qty="${p.quantity || 0}">${p.name}</option>`;
+            });
 
-        // ============================================
-        // AUTO-FILL EXPECTED QUANTITY ON SELECT
-        // ============================================
+            // Load previous counts
+            await loadPreviousCounts();
+        });
+
+        // Auto-fill Expected Qty
         document.getElementById('countItem').addEventListener('change', function() {
-            const product = allProducts.find(p => p.id === this.value);
-            if (product) {
-                document.getElementById('expectedQty').value = product.quantity || 0;
+            const selectedOption = this.options[this.selectedIndex];
+            if (this.value) {
+                document.getElementById('expectedQty').value = selectedOption.dataset.qty;
             } else {
                 document.getElementById('expectedQty').value = '';
             }
         });
 
-        // ============================================
-        // SAVE COUNT HANDLER
-        // ============================================
+        // Save Count & Update Inventory
         document.getElementById('saveCountBtn').addEventListener('click', async function() {
             const productId = document.getElementById('countItem').value;
             const expected = parseInt(document.getElementById('expectedQty').value) || 0;
-            const actual = parseInt(document.getElementById('actualQty').value) || 0;
-            const remarks = document.getElementById('countRemarks').value || '';
-            const countedBy = document.getElementById('countedBy').value || 'Anonymous';
+            const actual = parseInt(document.getElementById('actualQty').value);
+            const remarks = document.getElementById('countRemarks').value;
+            const countedBy = document.getElementById('countedBy').value;
 
-            if (!productId) {
-                alert('❌ Please select an item');
-                return;
-            }
-            if (actual === 0 && document.getElementById('actualQty').value === '') {
-                alert('❌ Please enter the actual count');
-                return;
-            }
+            if (!productId) return alert('Please select an item');
+            if (isNaN(actual)) return alert('Please enter the actual count');
+            if (!countedBy) return alert('Please enter who is counting');
 
             const product = allProducts.find(p => p.id === productId);
             const variance = actual - expected;
-            let status = '';
-            
-            if (variance === 0) {
-                status = '✅ Match';
-            } else if (variance > 0) {
-                status = `⚠️ +${variance} extra`;
-            } else {
-                status = `⚠️ ${variance} missing`;
-            }
+            let statusText = variance === 0 ? 'Match' : variance > 0 ? `+${variance} extra` : `${variance} missing`;
 
-            const confirmMsg = variance === 0 
-                ? `✅ Count matches system. Update inventory to ${actual}?`
-                : `⚠️ Variance detected (${status}). This will OVERWRITE the system quantity to ${actual}. Proceed?`;
+            try {
+                // 1. Save the Count Log
+                await db.collection('stockCounts').add({
+                    companyId: getCurrentCompanyId(),
+                    item: product.name,
+                    productId: productId,
+                    expectedQty: expected,
+                    actualQty: actual,
+                    variance: variance,
+                    status: statusText,
+                    remarks: remarks,
+                    countedBy: countedBy,
+                    date: new Date().toISOString()
+                });
 
-            if (!confirm(confirmMsg)) return;
+                // 2. UPDATE THE INVENTORY (The magic part!)
+                await updateProductQty(productId, actual);
 
-            // Save and Update
-            const result = await saveStockCount({
-                item: product.name,
-                productId: productId,
-                expectedQty: expected,
-                actualQty: actual,
-                variance: variance,
-                remarks: remarks,
-                countedBy: countedBy,
-                status: status
-            }, productId);
+                alert(`✅ Stock Count saved!\n📦 ${product.name}\nInventory automatically updated to: ${actual}`);
 
-            if (result) {
-                alert(`✅ Stock count saved!\n\n🔄 Inventory updated to: ${actual} units`);
-                
-                // Reset form
-                document.getElementById('countItem').value = '';
-                document.getElementById('expectedQty').value = '';
-                document.getElementById('actualQty').value = '';
-                document.getElementById('countRemarks').value = '';
-                document.getElementById('countedBy').value = '';
-                
-                // Reload data
-                await loadProducts();
-                await loadPreviousCounts();
-            } else {
-                alert('❌ Error saving stock count');
+                // 3. Reload the page to show new data
+                window.location.reload();
+
+            } catch (error) {
+                console.error('Error saving count:', error);
+                alert('❌ Error saving stock count: ' + error.message);
             }
         });
 
-        // ============================================
-        // LOAD PREVIOUS COUNTS (UI)
-        // ============================================
+        // Render Previous Counts
         async function loadPreviousCounts() {
             const counts = await getStockCounts();
             const container = document.getElementById('previousCounts');
             
             if (counts.length === 0) {
                 container.innerHTML = '<div style="text-align:center;padding:20px;color:#999;">No previous counts</div>';
-            } else {
-                container.innerHTML = counts.slice(0, 10).map(c => `
-                    <div class="count-item">
-                        <div class="count-info">
-                            <strong>${c.item || 'N/A'}</strong>
-                            <span>Expected: ${c.expectedQty || 0} | Actual: ${c.actualQty || 0}</span>
-                            <span>By: ${c.countedBy || 'Anonymous'} | ${new Date(c.date).toLocaleDateString()}</span>
-                            ${c.remarks ? `<span>Note: ${c.remarks}</span>` : ''}
-                        </div>
-                        <div class="count-status ${c.variance === 0 ? 'match' : 'mismatch'}">
-                            ${c.status || 'Mismatch'}
-                        </div>
-                    </div>
-                `).join('');
+                return;
             }
-        }
 
-        // ============================================
-        // INIT PAGE
-        // ============================================
-        document.addEventListener('DOMContentLoaded', async function() {
-            await loadProducts();
-            await loadPreviousCounts();
-        });
+            container.innerHTML = counts.map(c => {
+                let varClass = 'match';
+                let varText = 'Match';
+                if (c.variance > 0) { varClass = 'extra'; varText = `▲ +${c.variance} extra`; }
+                if (c.variance < 0) { varClass = 'missing'; varText = `⚠️ ${Math.abs(c.variance)} missing`; }
+
+                return `
+                    <div class="count-item">
+                        <div class="item-name">${c.item}</div>
+                        <div class="count-info">Expected: <b>${c.expectedQty}</b> | Actual: <b>${c.actualQty}</b></div>
+                        <div class="variance ${varClass}">${varText}</div>
+                        <div style="font-size: 0.75rem; color: #999; margin-top: 5px;">
+                            By: ${c.countedBy} | ${new Date(c.date).toLocaleDateString()}
+                        </div>
+                        ${c.remarks ? `<div style="font-size:0.8rem; font-style:italic; color:#666; margin-top:5px;">"${c.remarks}"</div>` : ''}
+                    </div>
+                `;
+            }).join('');
+        }
     </script>
 </body>
 </html>
