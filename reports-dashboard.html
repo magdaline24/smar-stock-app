@@ -186,7 +186,6 @@
                         title = '⏰ Expiring Items Report';
                         break;
                     case 'stock-count':
-                        // We removed orderBy to prevent the Firebase Index error. Sorting happens below.
                         const countsSnapshot = await db.collection('stockCounts')
                             .where('companyId', '==', getCurrentCompanyId())
                             .get();
@@ -210,6 +209,29 @@
                         data.forEach(item => delete item._rawDate);
                         
                         title = '📋 Stock Count Report';
+                        break;
+                    case 'receiving':
+                        const recSnapshot = await db.collection('stockReceiving')
+                            .where('companyId', '==', getCurrentCompanyId())
+                            .get();
+                        data = [];
+                        recSnapshot.forEach(doc => {
+                            const r = doc.data();
+                            data.push({
+                                Date: new Date(r.dateReceived || r.date).toLocaleDateString(),
+                                Product: r.product,
+                                Quantity: r.quantity,
+                                DeliveryNote: r.deliveryNote,
+                                Batch: r.batchNumber || 'N/A',
+                                ReceivedBy: r.receivedBy,
+                                Expiry: r.expiryDate ? new Date(r.expiryDate).toLocaleDateString() : 'N/A',
+                                _rawDate: new Date(r.dateReceived || r.date)
+                            });
+                        });
+                        // Sort manually
+                        data.sort((a, b) => b._rawDate - a._rawDate);
+                        data.forEach(item => delete item._rawDate);
+                        title = '📥 Stock Receiving Report';
                         break;
                     default:
                         data = [];
@@ -254,13 +276,13 @@
                                 <strong style="font-size:1.2rem;">${totalItems}</strong>
                                 <p style="margin:0;font-size:0.8rem;color:#888;">Total Items</p>
                             </div>
-                            ${type !== 'stock-count' ? `
+                            ${type !== 'stock-count' && type !== 'receiving' ? `
                             <div class="stat-box" style="background:#f8f9ff;padding:15px;border-radius:10px;text-align:center;">
                                 <strong style="font-size:1.2rem;">KES ${totalValue.toLocaleString()}</strong>
                                 <p style="margin:0;font-size:0.8rem;color:#888;">Total Value</p>
                             </div>
                             ` : ''}
-                            ${type !== 'stock-count' ? `
+                            ${type !== 'stock-count' && type !== 'receiving' ? `
                             <div class="stat-box" style="background:#f8f9ff;padding:15px;border-radius:10px;text-align:center;">
                                 <strong style="font-size:1.2rem;">${lowStockCount}</strong>
                                 <p style="margin:0;font-size:0.8rem;color:#888;">Low Stock</p>
@@ -509,6 +531,9 @@
                 </button>
                 <button onclick="generateReport('stock-count')" style="padding:15px;background:#f8f9ff;border:2px solid #22c55e;border-radius:12px;cursor:pointer;font-family:'Poppins',sans-serif;font-size:0.9rem;">
                     <span style="font-size:2rem;">📋</span><br><strong>Stock Count</strong>
+                </button>
+                <button onclick="generateReport('receiving')" style="padding:15px;background:#f8f9ff;border:2px solid #3b82f6;border-radius:12px;cursor:pointer;font-family:'Poppins',sans-serif;font-size:0.9rem;">
+                    <span style="font-size:2rem;">📥</span><br><strong>Receiving Log</strong>
                 </button>
             </div>
 
